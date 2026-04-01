@@ -20,3 +20,5 @@ print(f"nota 3: {nota_3}")
 print(f"nota 4: {nota_4}")
 print ("-----------------------")
 print (f"promedio: {promedio_estudiante}")
+"""al hacer promedios se deben hacer las sumas entre () para que sume todo primero.
+despues se hace la operacion en este caso una division /"""
