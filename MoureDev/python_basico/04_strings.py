@@ -97,3 +97,30 @@ language.isnumeric()   # False → "python" no es un número
 # Encadenamiento: se pueden aplicar varias funciones seguidas
 # Python ejecuta de izquierda a derecha
 language.lower().isupper()  # False → primero pasa a minúscula, luego verifica si está en mayúscula
+
+# Operador "in"
+# Verifica si un valor está dentro de un string
+# Responde True o False
+# Se lee literalmente: "¿está X en Y?"
+
+email = "andres.palacios@gmail.com"
+print("@" in email)       # True  → "@" sí está en el email
+print("@" not in email)   # False → "not in" es lo contrario, verifica si NO está
+print("z" in email)       # False → "z" no está en el email
+print("gmail" in email)   # True  → también funciona con palabras completas
+
+# Método strip()
+# Elimina espacios en blanco al inicio y al final de un string
+# No elimina espacios en el medio
+# Muy usado en backend para limpiar datos que vienen del usuario
+
+usuario = "  andres_palacios  "
+print(usuario.strip())   # "andres_palacios" → eliminó espacios de ambos extremos
+
+# También existen versiones más específicas:
+print(usuario.lstrip())  # "andres_palacios  " → solo elimina espacios a la izquierda (left)
+print(usuario.rstrip())  # "  andres_palacios" → solo elimina espacios a la derecha (right)
+
+# Caso real: un usuario escribe su email con espacios accidentales
+email = "  andres@gmail.com  "
+print(email.strip())     # "andres@gmail.com" → limpio y listo para guardar en base de datos
