@@ -35,3 +35,32 @@ metodos_http_permitidos = ("GET", "POST", "PUT", "DELETE")
 
 # Intentar modificar una tupla genera TypeError
 # codigos_http[0] = 999  # TypeError: 'tuple' object does not support item assignment
+
+# Conversión entre Tuplas y Listas
+# En Python puedes convertir entre ambos tipos usando list() y tuple()
+# Útil cuando necesitas modificar datos de una tupla — la conviertes a lista,
+# la modificas y la vuelves a convertir a tupla
+
+# Tupla → Lista
+# Cuando necesitas modificar datos que estaban protegidos como tupla
+configuracion = ("localhost", 5432, "mi_base_de_datos")
+configuracion_lista = list(configuracion)
+print(configuracion_lista)        # ["localhost", 5432, "mi_base_de_datos"]
+print(type(configuracion_lista))  # <class 'list'>
+
+configuracion_lista[1] = 3306     # ahora sí puedes modificar
+print(configuracion_lista)        # ["localhost", 3306, "mi_base_de_datos"]
+
+# Lista → Tupla
+# Cuando quieres proteger datos de una lista para que no se modifiquen
+usuarios_activos = ["andres", "juan", "maria"]
+usuarios_activos_tupla = tuple(usuarios_activos)
+print(usuarios_activos_tupla)        # ("andres", "juan", "maria")
+print(type(usuarios_activos_tupla))  # <class 'tuple'>
+
+# Flujo completo: tupla → lista → modificar → tupla
+metodos_http = ("GET", "POST", "DELETE")
+temp = list(metodos_http)       # convertir a lista para modificar
+temp.append("PUT")              # agregar nuevo método
+metodos_http = tuple(temp)      # volver a proteger como tupla
+print(metodos_http)             # ("GET", "POST", "DELETE", "PUT")
