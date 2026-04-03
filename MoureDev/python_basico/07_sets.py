@@ -101,3 +101,9 @@ print(roles_usuario.difference(roles_extra))    # los que están en uno pero no 
 # Resumen: dos formas de escribir lo mismo
 # roles_usuario | roles_extra   ==   roles_usuario.union(roles_extra)
 # roles_usuario - roles_extra   ==   roles_usuario.difference(roles_extra)
+
+#en caso de que toque ordenar un set
+my_set = {"manzana", "naranja", "platano"}
+set_list = sorted(list(my_set))  # ordena alfabéticamente
+print(set_list[0])               # siempre "manzana"
+#si se requiere ordenar un set list toca usar sorted porque si no con cada print darta un orden diferente 
