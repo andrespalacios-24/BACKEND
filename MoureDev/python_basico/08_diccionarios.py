@@ -139,3 +139,63 @@ respuesta_api = {
     },
     "error": None
 }
+
+# ============================================================
+# ACCEDER A UNA LISTA DENTRO DE UN DICCIONARIO
+# ============================================================
+
+# Cuando un valor de un diccionario es una lista, se accede en dos pasos:
+# Paso 1 → entrar al diccionario con la clave
+# Paso 2 → operar sobre la lista que está adentro
+
+datos = {
+    "nombre": "Andrés",
+    "ciudad": "Bogotá",
+    "historial": ["buga", "tulua", "popayan"]   # el valor es una lista
+}
+
+
+# ── VER LA LISTA COMPLETA ────────────────────────────────────
+
+print(datos["historial"])           # ['buga', 'tulua', 'popayan']
+
+
+# ── ACCEDER A UN ELEMENTO ESPECÍFICO ─────────────────────────
+# Se encadena el índice de la lista al acceso del diccionario
+
+print(datos["historial"][0])        # 'buga'     → primer elemento
+print(datos["historial"][1])        # 'tulua'    → segundo elemento
+print(datos["historial"][-1])       # 'popayan'  → último elemento
+
+
+# ── SABER CUÁNTOS ELEMENTOS TIENE ───────────────────────────
+
+print(len(datos["historial"]))      # 3
+
+
+# ── BUSCAR SI UN ELEMENTO EXISTE ────────────────────────────
+
+print("buga" in datos["historial"])      # True
+print("bogota" in datos["historial"])    # False
+
+
+# ── USAR MÉTODOS DE LISTA ────────────────────────────────────
+# Como el valor ES una lista, puedes usar todos los métodos que ya conoces
+
+datos["historial"].append("cali")        # agrega un elemento
+datos["historial"].remove("tulua")       # elimina un elemento
+print(datos["historial"])                # ['buga', 'popayan', 'cali']
+
+
+# ── EN BACKEND ───────────────────────────────────────────────
+# Esto es muy común en APIs — los datos llegan como diccionarios
+# con listas adentro, por ejemplo:
+
+respuesta_api = {
+    "usuario": "Andrés",
+    "permisos": ["leer", "escribir", "eliminar"],
+    "dispositivos": ["PC Bogotá", "PC Buga"]
+}
+
+print(respuesta_api["permisos"][0])      # "leer"   → primer permiso
+print(len(respuesta_api["dispositivos"])) # 2       → cuántos dispositivos tiene
