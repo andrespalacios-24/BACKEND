@@ -29,7 +29,11 @@ endpoints = [
 ]
 
 # Tu código aquí:
-
+lista= set(endpoints)
+lista_unicos= list(lista) #se puede acortar un paso con sorted()
+lista_unicos.sort() #se acorta asi: lista_unicos = sorted(set(endpoints)) asi ordena y no toca comvertir a lista
+cantidad= len(lista_unicos)
+print(f"son: {cantidad} endpoint unicos, conformados por: {lista_unicos}")
 
 # -----------------------------------------------------------------------------
 # EJERCICIO 2 - Registro de usuarios
@@ -42,6 +46,15 @@ endpoints = [
 #    "Usuario registrado: Juan | Email: juan@mail.com | Edad: 25 | Rol: user"
 
 # Tu código aquí:
+datos_usuario= {}
+nombre= input("Ingrese Primer Nombre: ")
+correo= input("Ingrese Direccion Email: ")
+edad= int(input("Ingrese Edad: "))
+datos_usuario["primer nombre"]= nombre
+datos_usuario["direccion email"]= correo
+datos_usuario["edad"]= edad
+datos_usuario.update({"activo":True, "rol": "user"}) #poner las llaves y los boleanos:true van sin comillas
+print(f"usuario registrado: {nombre} | Email {correo} | edad: {edad} | Rol:{datos_usuario["rol"]} ") 
 
 
 # -----------------------------------------------------------------------------

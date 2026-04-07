@@ -124,3 +124,26 @@ print(usuario.rstrip())  # "  andres_palacios" → solo elimina espacios a la de
 # Caso real: un usuario escribe su email con espacios accidentales
 email = "  andres@gmail.com  "
 print(email.strip())     # "andres@gmail.com" → limpio y listo para guardar en base de datos
+
+# .join()
+# Une una lista de strings en un solo string usando un separador.
+# Sintaxis: "separador".join(lista)
+
+frutas = ["manzana", "pera", "uva"]
+
+resultado = ", ".join(frutas)
+print(resultado)  # → manzana, pera, uva
+
+resultado2 = " | ".join(frutas)
+print(resultado2)  # → manzana | pera | uva
+
+resultado3 = " - ".join(frutas)
+print(resultado3)  # → manzana - pera - uva
+
+# El separador puede ser cualquier string, incluso vacío:
+resultado4 = "".join(frutas)
+print(resultado4)  # → manzanapera uva
+
+# Contexto backend: unir endpoints en una sola línea
+endpoints = ["/users", "/products", "/orders"]
+print(" | ".join(endpoints))  # → /users | /products | /orders
