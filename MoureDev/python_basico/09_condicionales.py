@@ -2,7 +2,12 @@
 # CONDICIONALES EN PYTHON - Guía de referencia
 # Curso MoureDev | Andrés Palacios
 # ============================================================
-
+"""
+>  # mayor que
+<   # menor que
+>=  # mayor o igual que
+<=  # menor o igual que 
+"""
 
 # ------------------------------------------------------------
 # 1. IF BÁSICO
@@ -163,3 +168,102 @@ elif not clave_correcta:
     print("401 - Contraseña incorrecta")
 else:
     print("200 - Login exitoso. Bienvenido, andres")
+
+# ------------------------------------------------------------
+# 10. MATCH / CASE (Python 3.10+)
+# Equivalente moderno al switch de otros lenguajes.
+# Ideal cuando evalúas un mismo valor contra muchas opciones.
+# Más limpio que una cadena larga de elif.
+# ------------------------------------------------------------
+
+color_semaforo = "rojo"
+
+match color_semaforo:
+    case "rojo":
+        print("Detente")
+    case "amarillo":
+        print("Precaución")
+    case "verde":
+        print("Avanza")
+    case _:           # _ es el "default": cualquier otro valor
+        print("Color no reconocido")
+
+# Comparación: el mismo código con elif sería más verboso:
+# if color_semaforo == "rojo":
+#     print("Detente")
+# elif color_semaforo == "amarillo":
+#     ...
+
+
+# ------------------------------------------------------------
+# 11. CORTOCIRCUITO LÓGICO (short-circuit evaluation)
+# Python evalúa and/or de izquierda a derecha
+# y se detiene en cuanto el resultado está determinado.
+#
+# Con "and": si el primer valor es falsy, no evalúa el segundo.
+# Con "or":  si el primer valor es truthy, no evalúa el segundo.
+# ------------------------------------------------------------
+
+# Ejemplo con "and" — útil para evitar errores con None:
+usuario = None
+
+# Sin cortocircuito esto daría error: None no tiene .startswith()
+# Con "and", si usuario es None (falsy), Python no llega al segundo lado.
+if usuario and usuario.startswith("admin"):
+    print("Es administrador")
+else:
+    print("Usuario no válido")
+
+# Ejemplo con "or" — útil para valores por defecto:
+nombre_recibido = ""  # Llegó vacío desde un formulario
+
+nombre = nombre_recibido or "Invitado"
+print(nombre)  # "Invitado" — porque nombre_recibido es falsy
+
+
+# ------------------------------------------------------------
+# 12. WALRUS OPERATOR := (Python 3.8+)
+# Asigna una variable y evalúa la condición al mismo tiempo.
+# Evita repetir la misma expresión dos veces.
+# ------------------------------------------------------------
+
+# Sin walrus — calculas el valor y luego lo usas por separado:
+datos = {"usuario": "andres", "rol": "admin"}
+rol = datos.get("rol")   # primero asignas
+if rol:                  # luego evalúas
+    print(f"Rol encontrado: {rol}")
+
+# Con walrus — asignas y evalúas en una sola línea:
+if rol := datos.get("rol"):
+    print(f"Rol encontrado: {rol}")
+
+# Lo verás seguido en validaciones de APIs:
+# if token := request.headers.get("Authorization"):
+#     procesar_token(token)
+# else:
+#     print("401 - No autorizado")
+
+#-----------------------------------------------------------------------------------
+# IF NOT - Condicional negado
+#------------------------------------------------------------------------------------
+# "not" invierte el valor booleano de una condición
+# True  → False
+# False → True
+
+# En Python, los strings tienen valor booleano implícito:
+# - String con contenido → True
+# - String vacío ""     → False
+
+cadena_de_texto = input("cadena de texto: ")
+
+if not cadena_de_texto:        # Si NO hay contenido (vacío → False → not False → True)
+    print("cadena de texto vacia")
+else:                          # Si SÍ hay contenido (tiene texto → True → not True → False)
+    print("Contiene texto")
+
+# "not" funciona con cualquier valor booleano, no solo strings:
+# if not True  → False
+# if not False → True
+
+# Aplicación backend real: validar que un campo no llegue vacío
+# antes de guardarlo en una base de datos.
