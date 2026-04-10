@@ -61,6 +61,13 @@ while my_condition < 20:
 
 print("La ejecución continúa")
 
+# Ejemplo backend: encontrar el primer usuario activo, primer error en logs.
+ 
+numeros = [3, 7, 2, 9, 4]
+for numero in numeros:
+    if numero == 2:
+        print("Encontrado:", numero)
+        break  # deja de recorrer la lista
 
 # -----------------------------------------------------------------------------
 # 4. BUCLE for
@@ -109,6 +116,29 @@ print("La ejecución continúa")
 #   for clave, valor in my_dict.items():
 #       print(clave, "->", valor)
 
+# Ejemplo backend: procesar registros de una base de datos, iterar respuestas de API.
+ 
+# -- Con lista --
+usuarios = ["Ana", "Luis", "María"]
+for usuario in usuarios:
+    print(usuario)
+ 
+# -- Con cadena --
+for caracter in "Python":
+    print(caracter)  # imprime letra por letra
+ 
+# -- Con diccionario (claves) --
+perfil = {"name": "Brais", "age": 37, "country": "Galicia"}
+for clave in perfil:
+    print(clave)  # imprime: name, age, country
+ 
+# -- Con diccionario (valores) --
+for clave in perfil:
+    print(perfil[clave])  # imprime: Brais, 37, Galicia
+ 
+# -- Con diccionario (clave y valor juntos) --
+for clave, valor in perfil.items():
+    print(clave, ":", valor)  # forma más directa y común en backend # el ":" es sola para que quede clave:valor
 
 # -----------------------------------------------------------------------------
 # 5. continue — saltar una iteración
@@ -124,6 +154,15 @@ for element in my_dict:
 else:
     # Sí se ejecuta porque el bucle terminó sin break
     print("El bucle for para diccionario ha finalizado")
+
+# Cuándo usarlo: cuando quieres ignorar ciertos elementos.
+# Ejemplo backend: filtrar registros inválidos o vacíos, saltar None.
+ 
+datos = [1, None, 3, None, 5]
+for dato in datos:
+    if dato is None:
+        continue  # salta los None
+    print(dato)  # imprime: 1, 3, 5
 
 
 # -----------------------------------------------------------------------------
@@ -172,9 +211,86 @@ while intentos < 3:
     print(f"Intento {intentos + 1} de conexión...")
     intentos += 1
 
+# ============================================================
+# 9. range()
+# ============================================================
+# Para qué sirve: generar una secuencia de números sin crear una lista.
+# Cuándo usarlo: cuando necesitas repetir algo N veces o recorrer índices.
+# Ejemplo backend: paginar resultados, generar IDs, bucles con índice.
+ 
+# Sintaxis: range(inicio, fin, paso)
+# - inicio: número donde empieza (por defecto 0)
+# - fin: número donde PARA (no lo incluye)
+# - paso: de cuánto en cuánto avanza (por defecto 1)
+ 
+# -- Solo fin --
+for i in range(5):
+    print(i)  # 0, 1, 2, 3, 4
+ 
+# -- Inicio y fin --
+for i in range(1, 6):
+    print(i)  # 1, 2, 3, 4, 5
+ 
+# -- Con paso --
+for i in range(0, 11, 2):
+    print(i)  # 0, 2, 4, 6, 8, 10  (solo pares)
+ 
+# -- Orden inverso (paso negativo) --
+for i in range(10, 0, -1):
+    print(i)  # 10, 9, 8, 7, 6, 5, 4, 3, 2, 1
+
+# range(inicio, fin, paso)
+# El fin NUNCA se incluye — range() para antes de llegar a él.
+# Para orden inverso: inicio mayor que fin, paso negativo (-1).
+# Ejemplo: range(10, 0, -1) genera 10, 9, 8... 1  (el 0 no se incluye)
+# Si pusieras range(10, 1, -1) terminaría en 2, no en 1.
+ 
+# ============================================================
+# 10. enumerate()
+# ============================================================
+# Para qué sirve: recorrer una lista y tener el índice al mismo tiempo.
+# Cuándo usarlo: cuando necesitas saber la posición del elemento.
+# Ejemplo backend: numerar resultados, identificar posición de un error.
+ 
+productos = ["laptop", "mouse", "teclado"]
+for indice, producto in enumerate(productos):
+    print(indice, "-", producto)
+# Imprime:
+# 0 - laptop
+# 1 - mouse
+# 2 - teclado
+ 
+ 
+# ============================================================
+# 11. zip()
+# ============================================================
+# Para qué sirve: recorrer dos listas al mismo tiempo, par por par.
+# Cuándo usarlo: cuando tienes datos relacionados en listas separadas.
+# Ejemplo backend: combinar IDs con nombres, claves con valores.
+ 
+ids = [101, 102, 103]
+nombres = ["Ana", "Luis", "María"]
+for id_usuario, nombre in zip(ids, nombres):
+    print(id_usuario, "->", nombre)
+# Imprime:
+# 101 -> Ana
+# 102 -> Luis
+# 103 -> María
+ 
+ 
+# ============================================================
+# RESUMEN RÁPIDO
+# ============================================================
+# while          → condición dinámica, no sabes cuántas vueltas
+# for ... in     → recorrer iterables (listas, dicts, cadenas)
+# range()        → generar secuencias numéricas
+# break          → detener el bucle al encontrar lo buscado
+# continue       → saltar una vuelta, ignorar ciertos elementos
+# enumerate()    → recorrer con índice incluido
+# zip()          → recorrer dos listas en paralelo
 
 # -----------------------------------------------------------------------------
-# 9. ERRORES COMUNES
+# 12. ERRORES COMUNES
 # -----------------------------------------------------------------------------
 
 # ❌ Olvidar actualizar la condición en while → bucle infinito
@@ -192,6 +308,3 @@ while intentos < 3:
 #    Para el valor: print(my_dict[x])
 #    Para ambos:    use .items() → for clave, valor in my_dict.items()
 
-# =============================================================================
-#  Próximo tema: Funciones
-# =============================================================================
