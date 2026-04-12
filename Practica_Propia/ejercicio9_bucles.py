@@ -12,13 +12,16 @@
 # Usa un bucle for con range() para imprimir los números del 1 al 20
 # solo los que sean múltiplos de 3.
 # Resultado esperado: 3, 6, 9, 12, 15, 18
-
+for x in range (3, 20, 3): #se podria hacer con una condicional if si se pone
+    print(x)               # range desde 0, 20, 3 con un if x >=3
 
 # Ejercicio 2
 # Usa un bucle while para contar cuántos números entre 1 y 50
 # son divisibles por 5. Imprime el resultado al final.
 # Resultado esperado: 10
-
+condicion=0 
+while condicion <=50:
+    condicion 
 
 # Ejercicio 3
 # Dada esta lista de temperaturas:
