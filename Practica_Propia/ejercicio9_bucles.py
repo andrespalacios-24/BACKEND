@@ -171,3 +171,28 @@ else:                                    #continuar con otra condicion
 # - Contar los intentos fallidos por usuario
 # - Imprimir los usuarios que tengan 2 o más intentos fallidos (posible ataque)
 # Resultado esperado: luis tiene 3 intentos fallidos — ALERTA
+
+intentos = [
+     {"usuario": "ana", "exitoso": True},
+     {"usuario": "luis", "exitoso": False},
+     {"usuario": "ana", "exitoso": False},
+     {"usuario": "pedro", "exitoso": True},
+     {"usuario": "luis", "exitoso": False},
+     {"usuario": "luis", "exitoso": False},
+        ]
+
+fallo_usuario={}
+
+for login in intentos:
+    if login["exitoso"] == False:
+        nombre = login["usuario"] #toca crear una variable para que almacene los nombres 
+        if nombre in fallo_usuario: #se puede usar un if dentro de otro if se llama encadenado 
+            fallo_usuario[nombre]+=1 #suma 1 si ya esta la variable de lo contrario no lo suma.
+        else:
+            fallo_usuario[nombre]=1 #se usa por si el nombre no esta por primera vez, ya que si no esta no se puede sumar algo que no esta
+   
+for usuario, cantidad in fallo_usuario.items(): #el .item() se unsa para tener key:valor, por eso se ponen variables usuario y cantidad
+    if cantidad >=2:
+        print(f"{usuario} tiene {cantidad} de intentos fallidos - ALERTA")
+    else:
+        print(f"{usuario} tiene {cantidad} de fallos - ACEPTADO")
