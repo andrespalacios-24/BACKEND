@@ -22,13 +22,16 @@ intentos = [
      {"usuario": "luis", "exitoso": False},
         ]
 
+fallo_usuario={}
+aceptado_usuario=[]
 fallido=0
 aceptado=0
 for login in intentos:
     if (login["exitoso"]) ==False:
-        fallido+=1
-
-print(fallido)
-    #else:
-       # aceptado+=1
-       
+       fallo_usuario["usuario"[login]] +=1
+    else:
+        aceptado_usuario["usuario"[login]] +=1
+if fallido >=2:
+    print("posible ataque")
+else:
+    print("siga")
