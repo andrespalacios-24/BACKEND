@@ -196,3 +196,31 @@ for usuario, cantidad in fallo_usuario.items(): #el .item() se unsa para tener k
         print(f"{usuario} tiene {cantidad} de intentos fallidos - ALERTA")
     else:
         print(f"{usuario} tiene {cantidad} de fallos - ACEPTADO")
+
+#------------------------------------------------------------------------------
+# adicional para consolidar el ultimo punto
+#------------------------------------------------------------------------------
+pedidos = [
+    {"producto": "laptop", "entregado": True},
+    {"producto": "mouse", "entregado": False},
+    {"producto": "teclado", "entregado": False},
+    {"producto": "monitor", "entregado": True},
+    {"producto": "mouse", "entregado": False},
+]
+# Cuenta cuántas veces falló la entrega de cada producto
+# e imprime los que fallaron más de 1 vez.
+fallo= {}
+
+for producto in pedidos:
+    if producto["entregado"]==False:
+        entrega=producto["producto"]
+        if entrega in fallo:
+            fallo[entrega]+=1
+        else:
+            fallo[entrega]=1
+
+for item, estado in fallo.items():
+    if estado >1:
+        print(f"{item} la entrega fallo {estado} veces")
+    else:
+        print(f"{item} la entrega fallo {estado} vez")
