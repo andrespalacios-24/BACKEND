@@ -1,6 +1,7 @@
-# 9. Crea una funcion llamada "count_characters" que reciba una cadena de texto y retorne el numero de caracteres que contiene.
-def count_characters(*texto):
-   for caracter in count_characters():
-      return texto
-     
-print(count_characters("ronaldo"))
+# 10. Escribe una funcion llamada "display_messages" que reciba un numero indefinido de cadenas y las imprima en mayusculas, una por una, tal como se hizo en el archivo proporcionado.
+
+def display_messages(*cadenas):
+    for cadena in cadenas:
+        print(cadena.upper())
+
+display_messages("sisas", "mipapacho")

@@ -75,4 +75,16 @@ print(calculate_average(3,3,3))
 
 # 9. Crea una funcion llamada "count_characters" que reciba una cadena de texto y retorne el numero de caracteres que contiene.
 
+def count_characters(texto):
+   return len(texto) #queda el len() solo porque es una funcion y no un metodo entonces no lleva .
+  
+
+print(count_characters("alo"))
+
 # 10. Escribe una funcion llamada "display_messages" que reciba un numero indefinido de cadenas y las imprima en mayusculas, una por una, tal como se hizo en el archivo proporcionado.
+
+def display_messages(*cadenas):
+    for cadena in cadenas:
+        print(cadena.upper())
+
+display_messages("sisas", "mipapacho")
