@@ -18,15 +18,60 @@ print(resultado)
 
 # 3. Crea una funcion llamada "is_even" que reciba un numero entero como argumento y retorne True si es par y False si es impar.
 
+def is_even(valor):  #no se puede poner print dentro del return ya que este devuelve un valor
+ if valor %2 ==0:    # que se guarda no que se imprime en la pantalla como un print
+  return (True)
+ else:
+  return (False)
+
+#ejemplo tipo backend
+usuarios = [2, 5, 8, 11, 14]
+
+for id in usuarios:
+    if is_even(id):
+        print(f"ID {id} es par - asignar a grupo A")
+    else:
+        print(f"ID {id} es impar - asignar a grupo B")
+
 # 4. Escribe una funcion llamada "convert_to_uppercase" que reciba una cadena de texto y la retorne en mayusculas.
+ 
+def convert_to_uppercase(frase):
+     return frase.upper()
+
+print(convert_to_uppercase("buenas buenas"))
+
 
 # 5. Crea una funcion llamada "arbitrary_sum" que reciba un numero arbitrario de numeros como argumentos y retorne la suma de todos ellos.
 
+def arbitrary_sum(*values):
+    return sum(values)
+    
+    
+print(arbitrary_sum(323, 222, 3))
+
 # 6. Escribe una funcion llamada "generate_full_greeting" que reciba dos argumentos: nombre y apellido, y retorne el saludo completo "Hola, <nombre> <apellido>". Los argumentos deben ser pasados por clave.
+
+def generate_full_greeting(nombre, apellido):
+    return (f"HOLA, {nombre} {apellido}")
+
+print(generate_full_greeting(apellido="maikel", nombre="smit"))
 
 # 7. Crea una funcion llamada "power" que reciba dos numeros: base y exponente, y retorne el resultado de elevar la base al exponente.
 
+
+def power(valor,valor_2):
+    return valor ** valor_2
+
+print(power(2, 3)) #8
+
 # 8. Escribe una funcion llamada "calculate_average" que reciba tres numeros y retorne su promedio.
+
+def calculate_average(numero_1, numero_2, numero_3):
+    suma= (numero_1 + numero_2 + numero_3) 
+    promedio= suma / 3
+    return promedio
+
+print(calculate_average(3,3,3))
 
 # 9. Crea una funcion llamada "count_characters" que reciba una cadena de texto y retorne el numero de caracteres que contiene.
 
