@@ -1,8 +1,41 @@
 # 1. Crea una clase llamada "Animal" que tenga una propiedad "species" y un metodo "make_sound" que imprima un sonido generico.
 
+class Animal():
+    def __init__(self, species):
+        self.species=species
+
+    def make_sound(self):
+        print(f"El {self.species} hace un sonido propio del animal")
+        
+domestico = Animal("gato")
+print(domestico.species)
+domestico.make_soud()
 # 2. Modifica la clase "Animal" para que reciba la especie al crear un objeto y almacenala en una propiedad publica. Añade el metodo "make_sound" que imprima un sonido dependiendo de la especie.
 
+class Animal():
+    def __init__(self, species):
+        self.species=species
+
+    def make_sound(self):
+        if self.species.lower() == "perro": #se puso el .lower() por si un usuario escribe la primera en
+            print("guau guau")              # mayuscula entonces en make_sound aparece sonido no reconocido
+        elif self.species.lower() == "gato": #debido a que el sistema busca la misma palabra, de esa forma
+            print("miau miau")               # no importan las mayusculas lo empareja
+        else:
+            print("sonido aun no reconocido")
+
+domestico= Animal("Gato")
+print(domestico.species)
+domestico.make_sound()
+
 # 3. Crea una clase llamada "Car" con las propiedades publicas "brand" y "model". Ademas, debe tener una propiedad privada "_speed" que inicialmente sera 0.
+
+class Car(): #los nombres de las clases su primer letra siempre en mayuscula ej: CarDealer
+    def __init__(self, brand, model):
+        self.brand= brand
+        self.model= model
+        self._speed= 0
+        
 
 # 4. Añade a la clase "Car" un metodo llamado "accelerate" que aumente la velocidad en 10 unidades. Añade tambien un metodo "brake" que reduzca la velocidad en 10 unidades. Asegurate de que la velocidad no sea negativa.
 

@@ -1,7 +1,16 @@
-# 10. Escribe una funcion llamada "display_messages" que reciba un numero indefinido de cadenas y las imprima en mayusculas, una por una, tal como se hizo en el archivo proporcionado.
+# 4. Añade a la clase "Car" un metodo llamado "accelerate" que aumente la velocidad en 10 unidades. Añade tambien un metodo "brake" que reduzca la velocidad en 10 unidades. Asegurate de que la velocidad no sea negativa.
 
-def display_messages(*cadenas):
-    for cadena in cadenas:
-        print(cadena.upper())
+class Car(): #los nombres de las clases su primer letra siempre en mayuscula ej: CarDealer
+    def __init__(self, brand, model):
+        self.brand= brand
+        self.model= model
+        self._speed= 0
 
-display_messages("sisas", "mipapacho")
+    def accelerate(self):
+        self._speed += 10
+
+    def brake(self):
+        if self._speed > 0:
+            self._speed -= 10
+        else:
+            print("no es posible el carro esta detenido")
