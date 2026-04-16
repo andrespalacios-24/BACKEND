@@ -174,3 +174,35 @@ print(my_person.get_name())  # ✅ → Brais
 # → __str__ / __repr__: controlar cómo se imprime un objeto
 # → Dataclasses     : forma moderna y concisa de crear clases de datos
 # → ORM (SQLAlchemy, Django ORM): las clases se mapean a tablas de BD
+
+# ============================================================
+# GETTER Y SETTER EN PYTHON
+# ============================================================
+
+# GETTER: método para OBTENER el valor de un atributo privado
+# SETTER: método para CAMBIAR el valor de un atributo privado
+
+# Los atributos privados se definen con doble guion bajo (__)
+# No son accesibles directamente desde fuera de la clase
+
+class Book():
+    def __init__(self, title, author):
+        self.title = title       # atributo publico
+        self.__author = author   # atributo privado
+
+    # GETTER - obtiene el valor del atributo privado
+    def obtener_author(self):
+        return self.__author
+
+    # SETTER - cambia el valor del atributo publico
+    def cambiar_title(self, nuevo_title):
+        self.title = nuevo_title
+
+libro = Book("mi gatito miau", "el gatito")
+
+# Usando getter
+print(libro.obtener_author())     # "el gatito"
+
+# Usando setter
+libro.cambiar_title("mi perrito guau")
+print(libro.title)                # "mi perrito guau"
