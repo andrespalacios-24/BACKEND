@@ -162,4 +162,26 @@ print(f"La distancia es: {resultado}")
 
 # 9. Crea una clase "Employee" que tenga propiedades como "name", "hourly_wage" (pago por hora) y "hours_worked". Añade un metodo que calcule el pago total basado en las horas trabajadas y el salario por hora.
 
+class Employee():
+    def __init__(self, name, hourly_wage):
+        self.name=name
+        self.hourly_wage=hourly_wage
+        self.hours_worked= 0
+
+    def horas (self,numero ):
+        self.hours_worked +=numero
+
+    def pago (self):
+      sueldo=  self.hours_worked * self.hourly_wage
+      return sueldo
+       
+
+trabajador= Employee("robert",34)
+
+trabajador.horas(22)
+trabajador.horas(22)
+
+print(trabajador.hours_worked)
+print(trabajador.pago())
+
 # 10. Crea una clase "Store" que tenga una propiedad "inventory" (una lista de productos). Añade un metodo para agregar un producto al inventario y otro para mostrar todos los productos disponibles.

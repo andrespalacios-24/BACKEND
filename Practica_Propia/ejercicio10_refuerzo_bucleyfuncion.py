@@ -21,9 +21,16 @@
 # - Usa un bucle while que siga pidiendo hasta que sea válida.
 # - Cuando sea válida, imprime "Contraseña aceptada."
 
-def validar_contrasena(contrasena):
-    pass  # reemplaza con tu lógica
-
+def validar_contrasena():
+    # el input dentro del bucle es el que permite pedir los datos en cada vuelta si no se cumple la
+    while True: # este while true se utiliza cuando el bucle debe repetirse hasta que algo ocurra
+        contraseña=input("Ingrese contraseña: ") # si no se cumple con los 8 caracteres
+        if len(str(contraseña)) >= 8:            # el bucle sube y esta vez coge al input y asi hasta que de true y para con el break
+            print("Contraseña aceptada")
+            break
+        else:
+            print("contraseña incorrecta")
+validar_contrasena()
 
 # ------------------------------------------------------------
 # EJERCICIO 2 - Registro de usuarios (for + función)
@@ -42,8 +49,21 @@ usuarios_existentes = ["ana", "carlos", "luis"]
 nuevos_usuarios = ["ana", "pedro", "luis", "maria"]
 
 def registrar_usuarios(nuevos, existentes):
-    pass  # reemplaza con tu lógica
+   for usuarios in nuevos:
+      if usuarios in existentes:
+         print(f"{usuarios} el usuario ya esta registrado")
+      else:
+         print(f"{usuarios} registrado exitosamente")
 
+registrar_usuarios( nuevos_usuarios,usuarios_existentes)
+
+# PARÁMETROS = APODOS TEMPORALES
+# def registrar_usuarios(nuevos, existentes) le dice a la función:
+# "lo primero que te pasen llámalo 'nuevos', lo segundo 'existentes'"
+# Cuando llamas registrar_usuarios(nuevos_usuarios, usuarios_existentes)
+# Python hace internamente: nuevos = nuevos_usuarios / existentes = usuarios_existentes
+# Por eso la función puede recibir CUALQUIER lista, no depende de nombres fijos.
+# Esto es lo que hace reutilizable una función en backend.
 
 # ------------------------------------------------------------
 # EJERCICIO 3 - Filtro de logs (for + continue + función)
@@ -66,8 +86,23 @@ logs = [
     "ERROR: ruta no encontrada"
 ]
 
+errores= [] # cree esta lista para que se acumularan los errores
+
 def filtrar_errores(logs):
-    pass  # reemplaza con tu lógica
+    for busqueda in logs:
+        if "ERROR" in busqueda:          
+            errores.append(busqueda) #con el .append va añadiendo a la lista 
+    return errores #para que se retorne a la lista de errores
+
+print(filtrar_errores(logs))
+
+# LECCIÓN EJERCICIO 3 - Filtro de logs
+# 1. return va FUERA del for, al mismo nivel — si está dentro, la función
+#    para en la primera iteración y no recorre toda la lista.
+# 2. Primero acumula (append), luego retorna — el return siempre al final.
+# 3. continue no siempre es necesario — si el if no se cumple, el for
+#    ya pasa solo al siguiente elemento. Úsalo solo cuando necesites
+#    saltar lógica adicional que venga después dentro del bucle.
 
 
 # ------------------------------------------------------------
@@ -84,7 +119,20 @@ def filtrar_errores(logs):
 # - Si agota intentos, imprime "Usuario bloqueado."
 
 def intentos_login(contrasena_correcta):
-    pass  # reemplaza con tu lógica
+    intentos= 0 # el contador debe ir dentro de la funcion pero fuera del bucle para que se haga la suma
+    while True:
+        
+        intento= input("Ingrese contraseña: ")
+        if intento == contrasena_correcta:
+            print ("Acceso concedido")
+            break
+        else:
+         intentos +=1
+         if intentos >=3: # un if pued ir dentro de un else
+                print("usuario bloqueado")
+                break #para que se detenta en los 3 intentos
+        
+intentos_login("backend123")
 
 
 # ------------------------------------------------------------
