@@ -1,39 +1,12 @@
-# ------------------------------------------------------------
-# EJERCICIO 5 - Resumen de ventas (for + range() + función)
-# ------------------------------------------------------------
-# Tienes una lista de ventas diarias (números).
-# Necesitas calcular el total, el promedio y la venta máxima.
-# Esto simula un endpoint de reportes.
-#
-# Requisitos:
-# - Crea una función que reciba la lista de ventas.
-# - Recórrela con for (puedes usar range() o directo).
-# - Retorna un diccionario con: total, promedio, maximo.
-# - Imprime el resultado formateado con f-string.
+def dividir():
+ try:
+     numero_1= int(input("Ingrese primer numero: ")) 
+     numero_2= int(input("Ingrese segundo numero: "))
+     print(numero_1/numero_2)
+     print("no hay error en la division")
+ except ValueError:
+   print("uno de los parametros no es un numero")
 
-ventas = [120, 340, 89, 456, 230, 178, 95]
+dividir()
 
-def resumen_ventas(ventas):
-   total= 0                 #las listas en 0 deben queda dentro de la funcion pero
-   promedio= 0              # fuera del bucle en este caso for
-   maximo= 0
-   for venta in ventas:
-    total += venta
-   maximo= max(ventas) 
-   promedio= round (total / len(ventas),2) #le puse round para que lo redondeara a 2 decimales
-   return{
-    "total":total,
-    "promedio": promedio, 
-    "maximo": maximo
-   }
-resultado= resumen_ventas(ventas) #esto se hace para que se procese la lista y devuelva el 
-                                  # diccionario que tenemos dentro de la funcion (lo hace internamente)
-print(f"total de ventas:{resultado["total"]} | promedio de ventas:{resultado["promedio"]} | venta maxima:{resultado["maximo"]}")
-
-   
-    
- 
-
-
-
-
+#git commit -m "se inicia tema nuevo:excepciones y se hacen los ejercicios de mouredev del 1 al 7, se agrega el tema visto con sus explicaciones"
