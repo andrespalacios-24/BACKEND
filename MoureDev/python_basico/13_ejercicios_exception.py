@@ -112,6 +112,66 @@ multiples_excepciones()
 
 # 8. Crea una funcion que simule una transaccion. Lanza una excepcion personalizada llamada InsufficientFundsError si el saldo es menor que la cantidad a retirar.
 
+class InsufficientFundsError(Exception): #para hacer una excepcion personalizada se debe crear una clase
+    pass
+
+def monto(saldo, monto):
+    if saldo < monto:
+        raise InsufficientFundsError(f"saldo insuficiente: tienes {saldo}, intentas retirar: {monto}")
+    return saldo - monto # no poner un print con un return ya que el print no guarda el resultado
+                         # lo imprime y lo tira, pero el return si guarda el resultado
+                         # para ser usado ya sea en una variable o usada en otro calculo    
+
+try:
+    resultado = monto(30, 100)
+    print(f"Retiro exitoso, su saldo actual: {resultado}")
+except InsufficientFundsError as fallo:
+    print(f"ERROR DE FONDOS: {fallo}")
+
 # 9. Crea una funcion que intente convertir una lista de cadenas en enteros. Maneja cualquier error que surja cuando una cadena no pueda convertirse.
 
+#lista_cadenas=["1","2","3","4","5"]
+lista_cadenas=["1","2","3","c","5"]
+
+def conversor(cadenas):
+ try:
+  lista_enteros= [int(x) for x in cadenas]
+  return lista_enteros
+ except ValueError:
+  return "uno de los elementos no se puede convertir a numero" # para que no de none toca que retorne el mensaje de erro
+                                                               # no el print, si no que retorne algo
+print(conversor(lista_cadenas))
+
 # 10. Crea una funcion que calcule la rai­z cuadrada de un numero. Lanza un ValueError si el numero es negativo.
+# 10. Crea una funcion que calcule la rai­z cuadrada de un numero. Lanza un ValueError si el numero es negativo.
+
+def raiz_cuadrada(numero):
+    try:
+     if numero <0:
+         raise ValueError
+     raiz= (numero ** 0.5)  
+     return raiz
+    except ValueError:
+          print ("el numero es negativo")
+
+print(raiz_cuadrada(-9))
+
+# cuando la función encuentra un ValueError (número negativo),
+# entra al except y ejecuta el print() — imprime el mensaje y listo.
+# pero la función NO retorna ningún valor — simplemente termina.
+# en Python, cuando una función termina sin return, automáticamente retorna None.
+
+# el problema está afuera:
+print(raiz_cuadrada(-9))
+# esto hace DOS cosas:
+# 1. ejecuta raiz_cuadrada(-9) → que ya imprime "el numero es negativo"
+# 2. intenta imprimir lo que retornó la función → que es None
+# por eso ves las dos líneas:
+# el numero es negativo
+# None
+
+# solución: para el caso de error, el print ya está DENTRO de la función.
+# no necesitas otro print() afuera. solo usas print() afuera para el caso exitoso:
+print(raiz_cuadrada(9))   # aquí sí tiene sentido porque retorna un valor
+raiz_cuadrada(-9)         # aquí no necesitas print() afuera, ya lo maneja la función
+#La regla general para recordar: si la función ya imprime por dentro, no la envuelvas en print() por fuera.git 

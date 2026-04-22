@@ -1,12 +1,32 @@
-def dividir():
- try:
-     numero_1= int(input("Ingrese primer numero: ")) 
-     numero_2= int(input("Ingrese segundo numero: "))
-     print(numero_1/numero_2)
-     print("no hay error en la division")
- except ValueError:
-   print("uno de los parametros no es un numero")
+# 10. Crea una funcion que calcule la rai­z cuadrada de un numero. Lanza un ValueError si el numero es negativo.
 
-dividir()
+def raiz_cuadrada(numero):
+    try:
+     if numero <0:
+         raise ValueError
+     raiz= (numero ** 0.5)  
+     return raiz
+    except ValueError:
+          print ("el numero es negativo")
 
-#git commit -m "se inicia tema nuevo:excepciones y se hacen los ejercicios de mouredev del 1 al 7, se agrega el tema visto con sus explicaciones"
+print(raiz_cuadrada(-9))
+
+# cuando la función encuentra un ValueError (número negativo),
+# entra al except y ejecuta el print() — imprime el mensaje y listo.
+# pero la función NO retorna ningún valor — simplemente termina.
+# en Python, cuando una función termina sin return, automáticamente retorna None.
+
+# el problema está afuera:
+print(raiz_cuadrada(-9))
+# esto hace DOS cosas:
+# 1. ejecuta raiz_cuadrada(-9) → que ya imprime "el numero es negativo"
+# 2. intenta imprimir lo que retornó la función → que es None
+# por eso ves las dos líneas:
+# el numero es negativo
+# None
+
+# solución: para el caso de error, el print ya está DENTRO de la función.
+# no necesitas otro print() afuera. solo usas print() afuera para el caso exitoso:
+print(raiz_cuadrada(9))   # aquí sí tiene sentido porque retorna un valor
+raiz_cuadrada(-9)         # aquí no necesitas print() afuera, ya lo maneja la función
+#La regla general para recordar: si la función ya imprime por dentro, no la envuelvas en print() por fuera.
