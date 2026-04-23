@@ -45,10 +45,24 @@ escribir("hola mis socios ") #este crea un archivo txt que se vera en las carpet
 leer() #similar a un print pero no lo  es   
 
 
-
-
 # 8. Crea un modulo llamado "statistics" que tenga funciones para calcular la media y la mediana de una lista de numeros. Usa este modulo para calcular estos valores en una lista dada.
+from estadistica import media, mediana
+pares=[92, 28, 4, 20, 73, 1, 100, 75, 58, 46]
+impares=[98, 78, 40, 38, 47, 19, 37, 57, 82, 17, 41, 4, 63]
 
-# 9. Crea un modulo que contenga una funcion para contar cuantes veces aparece una palabra en un texto. Escribe un programa que importe el modulo y lo use para contar palabras en una cadena.
+print(media(pares))
+print(mediana(pares))
+print(media(impares))
+print(mediana(impares))
+
+
+# 9. Crea un modulo que contenga una funcion para contar cuantas veces aparece una palabra en un texto. Escribe un programa que importe el modulo y lo use para contar palabras en una cadena.
+
+from cuenta_palabras import conteo
+print(conteo("El perro marrón corría por el parque mientras su dueño, un perro de peluche andante, lo observaba desde la banca. Era un día raro: un perro con sombrero paseaba a otro perro más pequeño. De repente, el perro grande ladró a un perro de juguete que vendían en un puesto. El vendedor, que también tenía un perro de verdad, se rió. Parece que mi perro quiere un amigo, dijo. Al final, cada perro regresó a su casa feliz, esperando que el perro del vecino no hiciera tanto ruido.", "perro"))
 
 # 10 Crea un modulo llamado "dates" que contenga funciones para obtener la fecha actual y calcular la diferencia entre dos fechas. Usa este modulo en un programa para mostrar la fecha actual y la diferencia entre dos fechas especificas.
+from dates import fecha_actual, diferencia_fechas
+
+print(fecha_actual())
+print(diferencia_fechas(1998,4,23))

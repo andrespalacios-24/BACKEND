@@ -2,11 +2,15 @@
 def media(lista):
   resultado=  sum(lista)/ len(lista)
   return resultado
-
+ 
 
 def mediana(lista):
-  lista.sort()
-  if len(lista) % 2 ==0:
-
+  datos_ordenados = sorted(lista)
+  n= len(datos_ordenados)
+  mitad= n // 2
+  if n %2 == 0:
+    return (datos_ordenados[mitad -1] + datos_ordenados[mitad]) /2
+  else:
+    return datos_ordenados[mitad] 
 
 
