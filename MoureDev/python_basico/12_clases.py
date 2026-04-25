@@ -18,6 +18,19 @@
 #   - Método    : función que pertenece a la clase
 #   - Instanciar: crear un objeto a partir de una clase
 
+# ============================================================
+# 0. PARTES DE UNA CLASE 
+# ============================================================
+
+class Libro:              # ← la CLASE (el molde)
+
+    def __init__(self, titulo, autor, anio):   # ← el CONSTRUCTOR
+        self.titulo = titulo    # ← ATRIBUTOS (guardan la info)
+        self.autor = autor
+        self.anio = anio
+
+    def __str__(self):          # ← MÉTODO (una acción/función del objeto)
+        return f"..."
 
 # ============================================================
 # 1. CLASE VACÍA
