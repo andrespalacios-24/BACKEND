@@ -26,7 +26,7 @@
 
 # -------------------------------------------------------------
 # ARCHIVO 2: operaciones.py
-# -------------------------------------------------------------
+# ------------------------------------------------------------- 
 # Importar cuenta
 # Funcion hacer_deposito(cuenta, monto):
 #   llama cuenta.depositar() con manejo de excepcion

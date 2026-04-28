@@ -1,0 +1,3 @@
+roberto,depositar,700
+maicol,depositar,233
+roberto,retiro,345
