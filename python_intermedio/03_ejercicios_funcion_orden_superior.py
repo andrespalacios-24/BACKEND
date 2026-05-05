@@ -93,4 +93,44 @@ print(selector(es_impar, numeracos))  # cuenta los impares
 
 # 9. Crea una función que reciba dos funciones y un número, y las aplique en orden.
 
+ #pseudocodigo
+#crear funcion selector que reciba 2 funciones y un numero 
+# una funcion suma x numero  y retorna el resultado
+# funcion que tome el resultado de la anterior funcion y multiplique dicho resultado
+# 
+def doble_funcion(funcion_1, funcion_2, numero):
+   resultado= funcion_1(numero)
+   return funcion_2(resultado)
+
+
+def suma(numero):
+   return numero + numero
+
+def multiplicar(numero):
+   return numero * 2
+
+
+print(doble_funcion(suma,multiplicar, 2))
+
 # 10. Crea una función que reciba una lista y una función, y aplique esa función a cada elemento usando un bucle (sin map).bucle (sin map).
+
+# pseudocodigo
+#crear una funcion que reciba una funcion y una elemento (lista)
+#usar bucle for para que la funcion afecte a cada elemento de la lista 
+#crear lista vacia dentro de la funcion para que guarde los elementos 
+
+aleatorios =[724, 18, 541, 92, 305, 617, 44, 883, 219, 560]
+
+def parametro(funcion, lista):
+    resultado=[]
+    for x in lista:
+        resultado.append(funcion(x))
+    return resultado
+        
+        
+    
+
+def resta (numero):
+    return numero -17
+
+print(parametro(resta,aleatorios))
