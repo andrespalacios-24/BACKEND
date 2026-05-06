@@ -1,0 +1,5 @@
+hola, desde python
+hola desde ruby
+necesito un archivo python
+los demas lenguajes no me sirven
+solo python
