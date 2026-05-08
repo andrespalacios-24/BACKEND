@@ -59,7 +59,7 @@
 # → El menú principal puede ser un bucle while con input() que llame a
 #   cada función según lo que elija el usuario.
 
-
+import json
 # =============================================================================
 # ESTRUCTURA SUGERIDA (solo los nombres — tú implementas el contenido)
 # =============================================================================
@@ -68,24 +68,67 @@
 
 
 # def cargar_contactos():
-#     # pseudocode aquí primero
-#     pass
+#crear una funcion para cargar el archivo json (read)
+# usar try except para manejar el error que no exista el archivo
+# usar with open para que cierre automaticamente 
+# poner la ubicacion del archivo donde abrira el json y se sobreescribira 
+# usar el json.load para cargar el archivo. 
+# despues del manejo del filenofound retornar una lista vacia     
+# 
+def cargar_contactos():
+    try:
+        with open("python_intermedio/agenda.json","r", encoding="utf-8")as archivo:
+            return json.load(archivo)
+    except FileNotFoundError:
+        return []
+
 
 
 # def guardar_contactos(contactos):
-#     # pseudocode aquí primero
-#     pass
+# crear funcion donde guardar el archivo json    
+# usar el with open para cerrado automatico 
+#usar la ubicacion donde el archivo se sobreescribira 
+# para esto se usa "w" 
+# usar el .dump donde adentro ira ident=4 para que sea legible por humanos
+# dentro del dump ira el contacto y el archivo donde se sobreescribira 
+# usar el ensure_ascii=False para poder que los nombres seal legibles por humanos
 
+def guardar_contactos(contactos):
+    with open("python_intermedio/agenda.json","w",encoding="utf-8")as archivo:
+        json.dump(contactos, archivo, indent=4, ensure_ascii=False)
 
 # def agregar_contacto(contactos):
-#     # pseudocode aquí primero
-#     pass
+# pedir nombre con input()
+# pedir telefono con input()
+# pedir email con input()
+# crear diccionario con esos tres valores
+# agregar el diccionario a la lista con append
+# llamar a guardar_contactos(contactos)
+
+def agregar_contacto(contactos):
+    nombre= input("escribir nombre de nuevo contacto: ")
+    telefono= input("escribir telefono de nuevo contacto: ")
+    email= input("escribir email de nuevo contacto")
+    nuevos = {
+        "nombre":nombre,
+        "telefono": telefono,
+        "email": email
+    }
+    contactos.append(nuevos)
+    guardar_contactos(contactos)
 
 
 # def ver_contactos(contactos):
-#     # pseudocode aquí primero
-#     pass
+#crear fucion ver contactos
+#usar bucle for para moverse en el diccionaro key valor
 
+def ver_contactos(contactos):
+    for contacto in contactos:
+     print(contacto["nombre"])
+     print(contacto["telefono"])
+     print(contacto["email"])
+     print("-" * 30) #solo visual para separar un contacto de otro con (------)
+     
 
 # def buscar_contacto(contactos):
 #     # pseudocode aquí primero
