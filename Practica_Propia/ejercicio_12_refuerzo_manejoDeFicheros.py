@@ -131,13 +131,48 @@ def ver_contactos(contactos):
      
 
 # def buscar_contacto(contactos):
-#     # pseudocode aquí primero
-#     pass
+# crear funcion con dos parametros para lista y para nombre
+# usar bucle for para recorrer 
+# usar funcion input para que el usuario ingrese el nombre
+#si el nombre.lower() es igual al nombre buscado retornar 
+#si no retornar none
 
+
+def buscar_contacto(contactos):
+   nombre= input("ingrese nombre del contacto: ").lower()
+   for p in contactos:
+        if p["nombre"].lower() == nombre:
+            return p
+   return None
+#-------------------------------------------------------------------
+# 1. pedir nombre al usuario y convertir a minusculas con .lower()
+# 2. recorrer la lista con for — cada elemento p es un diccionario
+# 3. comparar p["nombre"].lower() con el nombre buscado
+# 4. si hay coincidencia, retornar ese diccionario completo
+# 5. si recorre toda la lista sin encontrar, retornar None
+#--------------------------------------------------------------------
 
 # def eliminar_contacto(contactos):
-#     # pseudocode aquí primero
-#     pass
+# pedir nombre al usuario
+# usar buscar_contacto() para encontrar el contacto
+# si lo encuentra, usar remove() para eliminarlo de la lista
+# llamar a guardar_contactos()
+# si no lo encuentra, informar al usuario
+
+def eliminar_contacto(contactos):
+    contacto = buscar_contacto(contactos)
+    if contacto != None:
+        contactos.remove(contacto)
+        guardar_contactos(contactos)
+    else:
+        print("El contacto no existe")
+
+# 1. buscar_contacto() retorna el diccionario encontrado o None
+# 2. si contacto != None — el contacto existe en la lista
+# 3. contactos.remove(contacto) — remove() va sobre la LISTA, recibe el elemento a eliminar
+# 4. guardar_contactos(contactos) — guarda la lista actualizada en el JSON
+# 5. si contacto == None — informar al usuario que no existe
+
 
 
 # def menu():
