@@ -104,16 +104,30 @@ def guardar_contactos(contactos):
 # crear diccionario con esos tres valores
 # agregar el diccionario a la lista con append
 # llamar a guardar_contactos(contactos)
-
+# pseudocode validacion que correo contenga @ y .
+#se agrega bucle while true para que se repita hasta que se agrege un correo valido
+#se usa if para validar que contenga el @ y el . con in
+#si el correo no es valido imprime correo invalido debe contener @ y .
+# si es valido se usa break para parar el while 
 def agregar_contacto(contactos):
     nombre= input("escribir nombre de nuevo contacto: ")
+    for x in contactos:
+        if x["nombre"].lower() == nombre.lower():
+            print("ese contacto ya existe")
+            return
     telefono= input("escribir telefono de nuevo contacto: ")
-    email= input("escribir email de nuevo contacto")
+    while True:
+        email= input("escribir email de nuevo contacto: ")
+        if "@" in email and "." in email:
+            break
+        else: print("correo no valido, debe contener (@) y (.) ")
+
     nuevos = {
         "nombre":nombre,
         "telefono": telefono,
         "email": email
     }
+    
     contactos.append(nuevos)
     guardar_contactos(contactos)
 
@@ -176,8 +190,43 @@ def eliminar_contacto(contactos):
 
 
 # def menu():
-#     # pseudocode aquí primero
-#     pass
+#crear funcion que contenga el menu
+#con bucle while True para que el menu se mantega visible hasta que el usuario salga
+#se ponen los print  con las opciones a elegir para que sea visible 
+# se pide la opcion al usuario con input() poniendolo en una variable para usarlo varias veces
+#usar if elif  y else para las opciones 
+#se usa el break para salir del menu al final
+#
+
+def menu():
+    contactos= cargar_contactos()
+    while True:
+        print("\n--- MENU AGENDA ---")
+        print("1. agregar contacto")
+        print("2. ver contactos")
+        print("3. buscar contacto")
+        print("4. eliminar contacto")
+        print("5. salir")
+        
+        opcion= input("Elige una opcion (1-6): ")
+        if opcion == "1":
+            agregar_contacto(contactos)
+        elif opcion == "2":
+            ver_contactos(contactos)
+        elif opcion == "3":
+            buscar_contacto(contactos)
+        elif opcion == "4":
+            eliminar_contacto(contactos)
+        elif opcion == "5":
+            print("saliendo...")
+            break
+        else:
+            print("opcion invalida.")
+
+if __name__ == "__main__":
+    menu()
+
+
 
 
 # =============================================================================
