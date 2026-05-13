@@ -72,22 +72,154 @@ Dentro de un venv activado puedes usar simplemente 'pip'.
 """
 REQUESTS — cliente HTTP
 -----------------------
-Para qué sirve: hacer peticiones a APIs externas (GET, POST, PUT, DELETE).
-Cuándo usarlo: consumir APIs REST desde tu código.
+Para qué sirve: hacer peticiones HTTP a APIs externas desde Python.
+Cuándo usarlo: consumir APIs REST, descargar datos, interactuar con servicios web.
 
 Instalación: pip install requests
-Documentación: https://docs.python-requests.org
+Documentación oficial: https://docs.python-requests.org
+Referencia HTTP: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status
+
+
+¿QUÉ ES HTTP?
+--------------
+HTTP (HyperText Transfer Protocol) es el protocolo que define cómo se
+comunican cliente y servidor en la web. Cada vez que tu código hace una
+petición a una API, está hablando HTTP.
+
+El flujo es siempre:
+  Cliente (tu código) → petición → Servidor (la API)
+  Servidor            → respuesta (datos + código de estado) → Cliente
+
+
+MÉTODOS HTTP
+-------------
+Los métodos indican qué quieres hacer con el recurso:
+
+  GET     → obtener datos          (leer, no modifica nada)
+  POST    → enviar/crear datos     (crear un nuevo recurso)
+  PUT     → reemplazar datos       (actualizar un recurso completo)
+  PATCH   → modificar parcialmente (actualizar solo algunos campos)
+  DELETE  → eliminar datos         (borrar un recurso)
+
+En backend con FastAPI definirás endpoints para cada uno de estos métodos.
+
+
+CÓDIGOS DE ESTADO HTTP
+-----------------------
+El servidor responde siempre con un código numérico que indica qué pasó.
+Se agrupan por rango:
+
+  2xx — Éxito
+    200 OK                  → petición exitosa (GET estándar)
+    201 Created             → recurso creado correctamente (POST exitoso)
+    204 No Content          → éxito pero sin datos que devolver (DELETE exitoso)
+
+  3xx — Redirección
+    301 Moved Permanently   → el recurso cambió de URL de forma permanente
+    302 Found               → redirección temporal
+
+  4xx — Error del cliente (el problema está en quien hace la petición)
+    400 Bad Request         → petición mal formada o con datos inválidos
+    401 Unauthorized        → no autenticado (falta token o credenciales)
+    403 Forbidden           → autenticado pero sin permisos para ese recurso
+    404 Not Found           → el recurso no existe en esa URL
+    422 Unprocessable Entity→ datos con formato válido pero contenido inválido
+                              (FastAPI lo usa para errores de validación)
+
+  5xx — Error del servidor (el problema está en el servidor)
+    500 Internal Server Error → error inesperado en el servidor
+    502 Bad Gateway           → el servidor recibió una respuesta inválida
+    503 Service Unavailable   → servidor caído o sobrecargado
+
+En tu API FastAPI tú decides qué código devuelve cada endpoint según lo que ocurra.
+Por ejemplo: si el usuario pide un recurso que no existe → devuelves 404.
+
+
+EL OBJETO RESPONSE
+-------------------
+requests.get() devuelve un objeto Response con toda la información de la respuesta.
+Sus atributos más usados:
 """
 import requests
 
 response = requests.get("https://pokeapi.co/api/v2/pokemon?limit=5")
-print(response.status_code)        # 200 = OK
-print(response.json())             # respuesta como diccionario Python
-print(response.headers)            # cabeceras HTTP de la respuesta
 
-# POST con body JSON (ejemplo típico en backend)
+print(response.status_code)        # código de estado: 200, 404, 500, etc.
+print(response.ok)                 # True si status_code está entre 200-299
+print(response.json())             # cuerpo de la respuesta como dict/list Python
+print(response.text)               # cuerpo de la respuesta como string crudo
+print(response.headers)            # cabeceras HTTP de la respuesta
+print(response.url)                # URL final de la petición (útil si hubo redirección)
+
+# Buena práctica: verificar status_code antes de usar los datos
+if response.status_code == 200:
+    datos = response.json()
+else:
+    print(f"Error: {response.status_code}")
+
+# Forma más pythónica con response.ok
+if response.ok:
+    datos = response.json()
+
+
+"""
+MÉTODOS HTTP CON REQUESTS
+--------------------------
+Fuente: https://docs.python-requests.org/en/latest/user/quickstart/
+"""
+
+# GET — obtener datos (el más común al consumir APIs)
+# response = requests.get("https://pokeapi.co/api/v2/pokemon/pikachu")
+
+# GET con parámetros en la URL (query params)
+# Los query params son filtros que se pasan en la URL después del '?'
+# Se separan con '&' si hay más de uno: ?limit=5&offset=10
+#
+# limit  → cuántos resultados devuelve la API en una petición
+#           sin limit: PokeAPI devuelve 20 por defecto
+#           limit=5:   devuelve solo 5
+#           limit=151: devuelve los 151 Pokémon originales
+#
+# offset → desde qué posición empieza a contar
+#           offset=0:  desde el primero (por defecto)
+#           offset=20: salta los primeros 20, empieza desde el 21
+#           Combinado con limit permite paginar resultados
+#
+# Cuándo se usa en backend:
+# - Paginación de endpoints (no devolver miles de registros de golpe)
+# - Filtrar desde el origen para no procesar más de lo necesario
+# - Optimizar rendimiento y consumo de memoria
+#
+# Forma 1 — directo en la URL
+# response = requests.get("https://pokeapi.co/api/v2/pokemon?limit=5")
+#
+# Forma 2 — con offset
+# response = requests.get("https://pokeapi.co/api/v2/pokemon?limit=5&offset=10")
+#
+# Forma 3 — usando params (recomendada, más limpia)
+# params = {"limit": 5, "offset": 0}
+# response = requests.get("https://pokeapi.co/api/v2/pokemon", params=params)
+# requests construye la URL automáticamente: .../pokemon?limit=5&offset=0
+#
+# Ejemplo completo: nombres de los primeros 5 Pokémon
+# response = requests.get("https://pokeapi.co/api/v2/pokemon?limit=5")
+# for pokemon in response.json()["results"]:
+#     print(pokemon["name"])
+
+# POST — enviar datos para crear un recurso
 # payload = {"username": "andres", "password": "1234"}
-# response = requests.post("https://api.ejemplo.com/login", json=payload)
+# response = requests.post("https://api.ejemplo.com/usuarios", json=payload)
+
+# PUT — reemplazar un recurso completo
+# payload = {"username": "andres", "email": "nuevo@email.com"}
+# response = requests.put("https://api.ejemplo.com/usuarios/1", json=payload)
+
+# DELETE — eliminar un recurso
+# response = requests.delete("https://api.ejemplo.com/usuarios/1")
+
+# Enviar headers personalizados (autenticación con token, por ejemplo)
+# headers = {"Authorization": "Bearer mi_token_aqui"}
+# response = requests.get("https://api.privada.com/datos", headers=headers)
 
 
 """
@@ -125,20 +257,55 @@ Cuándo usarlo: leer/limpiar/transformar datasets, generar reportes.
 Relación con backend: ETL pipelines, procesamiento de datos antes de guardar en BD.
 
 Instalación: pip install pandas
-Documentación: https://pandas.pydata.org/docs/
+Documentación oficial: https://pandas.pydata.org/docs/
+
+
+¿QUÉ ES UN DATAFRAME?
+-----------------------
+Un DataFrame es una tabla de datos bidimensional con filas y columnas nombradas.
+Es el equivalente en Python a una hoja de Excel o una tabla de base de datos.
+
+Visualmente, esto es un DataFrame:
+
+  | nombre  | edad | salario |
+  |---------|------|---------|
+  | Ana     | 28   | 3500    |
+  | Carlos  | 34   | 4200    |
+  | Beatriz | 25   | 3100    |
+
+Cada columna es una variable (campo).
+Cada fila es un registro (un elemento del conjunto de datos).
+
+¿Para qué se usa en backend?
+- Leer datos de un CSV o Excel y procesarlos antes de guardarlos en la BD
+- Limpiar o transformar datos que vienen de una API externa
+- Generar reportes o estadísticas sobre datos almacenados
+- Filtrar, ordenar y agrupar conjuntos de datos grandes
+
+pandas importa con el alias 'pd' por convención universal.
 """
 # import pandas as pd
 #
-# # Crear DataFrame (tabla de datos)
+# # Crear DataFrame desde un diccionario
+# # Las keys son los nombres de columna, los values son las listas de datos
 # datos = {
 #     "nombre": ["Ana", "Carlos", "Beatriz"],
 #     "edad": [28, 34, 25],
 #     "salario": [3500, 4200, 3100]
 # }
 # df = pd.DataFrame(datos)
-# print(df)
-# print(df["salario"].mean())       # promedio de columna
-# print(df[df["edad"] > 26])        # filtrar filas
+# print(df)                          # muestra la tabla completa
+#
+# # Operaciones básicas
+# print(df["salario"].mean())        # promedio de la columna salario
+# print(df["nombre"])                # una sola columna como Serie
+# print(df[df["edad"] > 26])         # filtrar filas por condición
+# print(df.describe())               # estadísticas generales de columnas numéricas
+# print(len(df))                     # número de filas
+#
+# # Leer desde un archivo CSV (muy común en backend)
+# # df = pd.read_csv("datos.csv")
+# # df.to_csv("resultado.csv", index=False)   # guardar de vuelta a CSV
 
 
 """
