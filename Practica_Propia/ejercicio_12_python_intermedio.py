@@ -178,12 +178,32 @@ def listar_empleados(empleados):
 # Muestra todos los que coincidan.
 # Si no hay coincidencias, indicarlo.
 #pseudocode
-#
-#
-#
-#
+#crear un funcion de buscar empleados 
+# crear variable con una lista vacia donde se guarden los resultados de la busqueda
+#crear variable que contenga un output donde se ingresa el nombre a buscar
+#usar el bucle for empleado in empleados 
+#usar el if:
+#usar re.search() con empelados, nombre y el ignorecase
+#si cumple se usa .append para enviarla a la lista vacia
+# se retorna la lista
+#con else se lanza print con usuario no existe 
 def buscar_empleado(empleados):
+    personal= []
+    nombre= input("buscar empleado por nombre: ")
+    for empleado  in empleados:
+        if re.search(nombre, empleado["nombre"], re.I):
+            personal.append(empleado)
+    if personal:
+        for resultado in personal:
+            print(resultado["nombre"])
+            print(resultado["cargo"])
+            print(resultado["salario"])
+            print("-" * 30)
+    else:
+        print("No se encontró ningún empleado con ese nombre.")
     
+    
+
 
 
 # --- FUNCIÓN 6 ---
