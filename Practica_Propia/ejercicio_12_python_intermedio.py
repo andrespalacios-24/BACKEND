@@ -63,40 +63,113 @@ ARCHIVO = "empleados.json"
 # Carga los empleados desde el archivo JSON.
 # Si el archivo no existe, retorna una lista vacía.
 # Si el archivo existe pero está mal formado, maneja el error.
-
+#pseudocode
+#crear una funcion para cargar los empleados con archivo json (read)
+#se ua el try /except para manejar el error de que no se ha creado la lista
+#usamos el with open para que el archivo cierre automaticamente 
+#se pone la ubicacion del archivo donde se abre el json y se lee
+#se una el json.load para cargar el archivo
+#en el except despues del manejo del file no found se retorna una lista vacia 
+#en el except despues del json.JSONDecodeError se retorna un print con:
+#Error de sintaxis en el JSON: {e} y retornamos nuevamente una lista vacia 
 def cargar_empleados():
-    # pseudocode aquí
-    pass
+    try:
+        with open("python_intermedio/empleados.json","r", encoding="utf-8")as archivo:
+            return json.load(archivo)
+    except FileNotFoundError:
+        return []
+    except json.JSONDecodeError:
+        return []
+
 
 
 # --- FUNCIÓN 2 ---
 # Guarda la lista de empleados en el archivo JSON.
 # Usa indent=4 para que sea legible.
-
+#pseudocode
+#se crea la funcion donde se guardara el archivo .json
+#se usa el with open para el cerrado automatico 
+#se pone al ubicacion donde el archivo se sobre escribe 
+#para sobreescribir o crear si no existe se usa "w"
+#se usa el .dump para guardar el archivo como json
+#dentro del .dump se pone el ident=4
+#ira tambien empleados y el archivo donde se sobreescribira 
+#usar el ensure_ascii=False para poder que los nombres seal legibles por humanos
 def guardar_empleados(empleados):
-    # pseudocode aquí
-    pass
-
+   with open("python_intermedio/empleados.json","w",encoding="utf-8")as archivo:
+        json.dump(empleados, archivo, indent=4, ensure_ascii=False)
 
 # --- FUNCIÓN 3 ---
 # Agrega un nuevo empleado a la lista.
 # Pide por consola: nombre, cargo, salario (validar que sea número positivo),
 # fecha de ingreso (formato YYYY-MM-DD, validar con try/except y strptime).
 # Guarda después de agregar.
+#pseudocode
+#se crea funcion para agregar los empleados
+#se debe pedir nombre, cargo con input
+#se pide salario con input con un while, dentro un try except para manejar los errres de numero negativo y str
+#debera lanzar un value error
+#se pide con input la fecha de ingreso y con try except se valida que el formato sea el corecto
+#se crea variable que contenga el dict con la clave valor entra cada uno de nombre, cargo y salario
+#se llama a guardar empleados al final para guardar al archivo json
 
 def agregar_empleado(empleados):
-    # pseudocode aquí
-    pass
+    nombre= input("escribir nombre de nuevo contacto: ")
+    cargo= input("cargo a tener: ")
+    while True:
+        try:
+            salario= float(input("salario mensual a ganar: "))
+            if salario <0: 
+                print("ERROR: el salario no puede ser negativo")
+                continue
+            print(f"Salario validado con éxito: {salario}")
+            break
+        except ValueError:
+            print("Error: Debes introducir un número válido (no texto).")
+    
+    while True:
+        try:
+            fecha_ingreso= input("Introduce la fecha (YYYY-MM-DD): ")
+            fecha_objeto = datetime.strptime(fecha_ingreso, "%Y-%m-%d")
+            print(f"Fecha válida: {fecha_objeto.strftime('%Y-%m-%d')}")
+            break
+        except ValueError:
+            print("Error: Formato incorrecto. Debe ser AAAA-MM-DD (ejemplo: 2026-05-14).")
+
+    trabajadores= {
+        "nombre": nombre,
+        "cargo": cargo,
+        "salario": salario,
+        "fecha_ingreso":fecha_ingreso
+    }
+    empleados.append(trabajadores)
+    guardar_empleados(empleados)
+   
 
 
 # --- FUNCIÓN 4 ---
 # Lista todos los empleados con formato legible.
 # Si no hay empleados, muestra un mensaje indicándolo.
 # La fecha de ingreso debe mostrarse como "10 de mayo de 2024" (strftime).
-
+#pseudocode
+#crear funcion  para ver los empleados
+#usar bucle for para moverse en el diccionario key:valor 
+#usar if/else para indicar que no existe el empleado y que imprima un mensaje
+#usar el formato strftime para hacer la fecha legible 
 def listar_empleados(empleados):
-    # pseudocode aquí
-    pass
+    if not empleados:
+        print("No hay empleados en el registro")
+    else:
+        for empleado in empleados:
+            print(empleado["nombre"])
+            print(empleado["cargo"])
+            print(empleado["salario"])
+            # Paso 1: string → objeto datetime
+            fecha_obj = datetime.strptime(empleado["fecha_ingreso"], "%Y-%m-%d")
+            # Paso 2: objeto datetime → string bonito
+            fecha_bonita = fecha_obj.strftime("%d de %B de %Y")
+            print(fecha_bonita)
+            print("-" * 30)
 
 
 # --- FUNCIÓN 5 ---
@@ -104,10 +177,13 @@ def listar_empleados(empleados):
 # USA re.search() con re.IGNORECASE.
 # Muestra todos los que coincidan.
 # Si no hay coincidencias, indicarlo.
-
+#pseudocode
+#
+#
+#
+#
 def buscar_empleado(empleados):
-    # pseudocode aquí
-    pass
+    
 
 
 # --- FUNCIÓN 6 ---
