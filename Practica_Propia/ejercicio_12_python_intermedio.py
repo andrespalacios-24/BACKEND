@@ -208,25 +208,58 @@ def buscar_empleado(empleados):
 
 # --- FUNCIÓN 6 ---
 # Muestra estadísticas:
-# - Total de empleados
-# - Salario promedio
-# - Empleado con mayor salario
-# - Empleado con menor salario
+# - Total de empleados (len)
+# - Salario promedio (sum+len)
+# - Empleado con mayor salario (max)
+# - Empleado con menor salario (min)
 # Si no hay empleados, manejar el caso.
+#pseudocode
+#usar if para imprimir en caso de que no hay empleados 
+#crear una funcion que muestre las estadisticas de la empresa
+#usar list comprehension mas len para saber el total de empleados
+#usar list comprehension mas len y sum para el promedio 
+#usar lambda con max para el mayor salario y min para el menor salario
 
 def mostrar_estadisticas(empleados):
-    # pseudocode aquí
-    pass
+    if not empleados:
+        print("No hay empleados registrados.")
+    else:
+        total_empleados= len(empleados)
+        print(f"total empleados: {total_empleados}")
+        print("-"*30)
+        salario_promedio= sum(e["salario"] for e in empleados) / len(empleados)
+        print(f"promedio salario de los empleados: {salario_promedio}")
+        print("-"*30)
+        empleado_mayorSalario= max(empleados, key=lambda e: e["salario"])
+        empleado_menorSalario= min(empleados, key=lambda e: e["salario"])
+        print(f"empleado con mayor salario: {empleado_mayorSalario["nombre"]}, con un salario de: {empleado_mayorSalario["salario"]}")
+        print(f"empleado con menor salario: {empleado_menorSalario["nombre"]}, con un salario de: {empleado_menorSalario["salario"]}")
 
 
 # --- FUNCIÓN 7 ---
 # Elimina un empleado por nombre exacto (puedes usar RegEx o comparación directa).
 # Si no existe, indicarlo.
 # Guarda después de eliminar.
+#pseudocode
+#pedir nombre a usuario con input
+#usar for para recorrer empleados
+#usar bucle if 
+#comparar el nombre del input que sea == al nombre de empleados
+#usar empleados.remove(empleado) si conincide 
+#se llama la funcion guardar_empleado para guardar despues de haber eliminado
+#con el else y un print se avisa al usuario que el empleado no existe
 
 def eliminar_empleado(empleados):
-    # pseudocode aquí
-    pass
+    nombre_empleado= input("ingrese nombre del empleado:")
+    encontrado = False
+    for x in empleados:
+        if nombre_empleado== x["nombre"]:
+            empleados.remove(x)
+            guardar_empleados(empleados)
+            encontrado= True
+    if not encontrado:
+        print("el empleado no existe")
+
 
 
 # --- MENÚ PRINCIPAL ---

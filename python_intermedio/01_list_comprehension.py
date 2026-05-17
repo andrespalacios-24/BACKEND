@@ -321,3 +321,178 @@ for rol, fila in zip(roles, permisos):
 # admin:  [True, True, True]
 # editor: [True, True, False]
 # viewer: [False, False, False]
+
+# ============================================================
+# ANEXO — LIST COMPREHENSION CON FUNCIONES AGREGADAS
+# Para pegar al final de tu archivo de list comprehension existente
+# Fuente: Python Docs — Functional Programming HOWTO
+# https://docs.python.org/3/howto/functional.html
+# Fuente: Python Docs — Built-in Functions
+# https://docs.python.org/3/library/functions.html
+# ============================================================
+
+# Lo que aprendiste antes: la forma básica
+# [expresion for elemento in iterable]
+# → produce una lista nueva
+
+# Lo que verás acá: pasar esa lista a funciones que la consumen
+# sum(), max(), min(), len(), any(), all(), sorted()
+
+# ============================================================
+# CONTEXTO — ¿Por qué esta forma?
+# ============================================================
+
+# Cuando tienes una lista de diccionarios (como empleados),
+# las funciones como sum() o max() no saben por cuál clave operar.
+# Necesitas extraer primero los valores que te interesan.
+# La list comprehension es la herramienta para eso.
+
+empleados = [
+    {"nombre": "Andrés",  "cargo": "Backend Dev",  "salario": 3500000, "fecha_ingreso": "2024-05-10"},
+    {"nombre": "María",   "cargo": "QA Engineer",  "salario": 2800000, "fecha_ingreso": "2023-11-01"},
+    {"nombre": "Carlos",  "cargo": "DevOps",       "salario": 4200000, "fecha_ingreso": "2022-03-15"},
+    {"nombre": "Lucía",   "cargo": "Diseñadora",   "salario": 3100000, "fecha_ingreso": "2025-01-20"},
+]
+
+# ============================================================
+# 1. sum() — sumar valores de una clave
+# ============================================================
+
+# Problema: sumar todos los salarios de la lista de diccionarios.
+# sum() necesita un iterable de números, no de diccionarios.
+
+# PASO A PASO visible:
+salarios = [e["salario"] for e in empleados]   # → [3500000, 2800000, 4200000, 3100000]
+total = sum(salarios)
+print(f"Total salarios (paso a paso): {total}")
+
+# FORMA COMPACTA (una sola línea):
+total = sum([e["salario"] for e in empleados])
+print(f"Total salarios (compacto): {total}")
+
+# ¿Qué hace la list comprehension acá?
+# Recorre cada diccionario 'e' en empleados
+# y extrae solo el valor de "salario".
+# Le entrega a sum() una lista limpia de números.
+
+# Promedio (combina sum y len):
+promedio = sum([e["salario"] for e in empleados]) / len(empleados)
+print(f"Salario promedio: {promedio:,.0f}")
+
+
+# ============================================================
+# 2. max() y min() — valor extremo de una clave
+# ============================================================
+
+# Problema: encontrar el salario más alto y más bajo.
+
+mayor = max([e["salario"] for e in empleados])
+menor = min([e["salario"] for e in empleados])
+print(f"Mayor salario: {mayor}")
+print(f"Menor salario: {menor}")
+
+# PERO — esto solo da el número, no el empleado completo.
+# Si quieres el diccionario entero del empleado con mayor salario,
+# necesitas key=lambda (forma alternativa sin list comprehension):
+
+empleado_mayor = max(empleados, key=lambda e: e["salario"])
+empleado_menor = min(empleados, key=lambda e: e["salario"])
+print(f"Empleado mejor pagado: {empleado_mayor['nombre']} — {empleado_mayor['salario']}")
+print(f"Empleado menor salario: {empleado_menor['nombre']} — {empleado_menor['salario']}")
+
+# Regla práctica:
+# → solo el número extremo: usa list comprehension + max/min
+# → el diccionario completo del extremo: usa max/min con key=lambda
+
+
+# ============================================================
+# 3. len() — contar elementos que cumplen una condición
+# ============================================================
+
+# Problema: cuántos empleados ganan más de 3.000.000
+
+cantidad = len([e for e in empleados if e["salario"] > 3000000])
+print(f"Empleados con salario > 3.000.000: {cantidad}")
+
+# La list comprehension con if filtra antes de contar.
+# len() recibe solo los que pasaron el filtro.
+
+
+# ============================================================
+# 4. sorted() — ordenar por una clave
+# ============================================================
+
+# Problema: mostrar empleados ordenados por salario de mayor a menor.
+
+por_salario = sorted(empleados, key=lambda e: e["salario"], reverse=True)
+for e in por_salario:
+    print(f"{e['nombre']}: {e['salario']}")
+
+# sorted() con key=lambda es la forma estándar para ordenar diccionarios.
+# reverse=True → de mayor a menor.
+# reverse=False (default) → de menor a mayor.
+
+
+# ============================================================
+# 5. any() y all() — preguntas booleanas sobre la lista
+# ============================================================
+
+# any() → ¿hay AL MENOS UNO que cumpla la condición?
+# all() → ¿TODOS cumplen la condición?
+
+# ¿Hay algún empleado que gane más de 4.000.000?
+hay_alto = any([e["salario"] > 4000000 for e in empleados])
+print(f"¿Alguno gana más de 4M? {hay_alto}")   # → True
+
+# ¿Todos ganan más de 2.000.000?
+todos_dignos = all([e["salario"] > 2000000 for e in empleados])
+print(f"¿Todos ganan más de 2M? {todos_dignos}")  # → True
+
+# La list comprehension produce una lista de True/False,
+# y any()/all() la evalúan.
+
+
+# ============================================================
+# 6. Extraer una lista de un solo campo (uso frecuente)
+# ============================================================
+
+# A veces no necesitas una función agregada,
+# solo quieres una lista limpia de un campo específico.
+
+nombres = [e["nombre"] for e in empleados]
+print(f"Nombres: {nombres}")   # → ['Andrés', 'María', 'Carlos', 'Lucía']
+
+cargos = [e["cargo"] for e in empleados]
+print(f"Cargos: {cargos}")
+
+
+# ============================================================
+# 7. Tabla resumen — cuándo usar cada forma
+# ============================================================
+
+# | Necesitas                              | Usar                                      |
+# |----------------------------------------|-------------------------------------------|
+# | Suma de un campo                       | sum([e["campo"] for e in lista])          |
+# | Promedio de un campo                   | sum([...]) / len(lista)                   |
+# | Número extremo (max o min)             | max([e["campo"] for e in lista])          |
+# | Diccionario completo del extremo       | max(lista, key=lambda e: e["campo"])      |
+# | Contar los que cumplen condición       | len([e for e in lista if condicion])      |
+# | Ordenar por campo                      | sorted(lista, key=lambda e: e["campo"])   |
+# | ¿Alguno cumple condición?              | any([condicion for e in lista])           |
+# | ¿Todos cumplen condición?              | all([condicion for e in lista])           |
+# | Lista limpia de un campo              | [e["campo"] for e in lista]               |
+
+
+# ============================================================
+# NOTA SOBRE GENERATOR EXPRESSIONS
+# ============================================================
+
+# En Python es válido escribir sin los corchetes internos:
+# sum(e["salario"] for e in empleados)   ← generator expression
+# sum([e["salario"] for e in empleados]) ← list comprehension
+
+# Ambas funcionan igual con sum/max/min/any/all.
+# La diferencia es interna (memoria), no en el resultado.
+# Para tu nivel actual usa la forma con corchetes — es más legible
+# y consistente con lo que ya conoces.
+# Fuente: https://docs.python.org/3/glossary.html#term-generator-expression
