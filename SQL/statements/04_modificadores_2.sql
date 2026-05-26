@@ -385,3 +385,44 @@ GROUP BY studio_id
 HAVING COUNT(*) >= 1
 ORDER BY recaudacion_total DESC
 LIMIT 5;
+
+-- =============================================================
+-- 12. SUBQUERY (Subconsulta)
+-- =============================================================
+-- Una query dentro de otra query.
+-- La query interior se ejecuta primero y su resultado
+-- lo usa la query exterior como valor o lista de valores.
+-- Cuándo usarlo: cuando necesitas datos de otra tabla para
+--               filtrar, pero aún no has visto JOIN.
+
+-- Sintaxis con valor único (=):
+-- SELECT columnas FROM tabla
+-- WHERE columna = (SELECT columna FROM tabla2 WHERE condición);
+
+-- Sintaxis con múltiples valores (IN):
+-- SELECT columnas FROM tabla
+-- WHERE columna IN (SELECT columna FROM tabla2 WHERE condición);
+
+-- Películas dirigidas por Christopher Nolan
+SELECT title
+FROM movies
+WHERE director_id = (
+    SELECT people_id
+    FROM people
+    WHERE name = 'Christopher Nolan'
+);
+
+-- Actores nacidos en Reino Unido (country_id puede ser múltiple → IN)
+SELECT name
+FROM people
+WHERE category = 'Actor'
+AND country_of_birth_id IN (
+    SELECT country_id
+    FROM countries
+    WHERE country_name = 'Reino Unido'
+)
+ORDER BY name;
+
+-- REGLA CLAVE:
+-- Si la subquery devuelve UN solo valor  → usar =
+-- Si la subquery devuelve VARIOS valores → usar IN
