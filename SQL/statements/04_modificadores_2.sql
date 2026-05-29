@@ -426,3 +426,34 @@ ORDER BY name;
 -- REGLA CLAVE:
 -- Si la subquery devuelve UN solo valor  → usar =
 -- Si la subquery devuelve VARIOS valores → usar IN
+
+-- =============================================================
+-- 13. FUNCIONES DE FECHA
+-- =============================================================
+-- MySQL tiene funciones para extraer partes de una fecha.
+-- Cuándo usarlas: cuando no necesitas la fecha completa sino
+--                solo una parte (año, mes, día).
+
+-- YEAR(fecha)  → extrae el año
+-- MONTH(fecha) → extrae el mes (número: 1-12)
+-- DAY(fecha)   → extrae el día del mes
+-- NOW()        → fecha y hora actual del servidor
+
+-- Obtener el año de nacimiento de cada director
+SELECT name, YEAR(birth_date) AS año_nacimiento
+FROM people
+WHERE birth_date IS NOT NULL AND category = 'Director';
+
+-- Obtener el mes de nacimiento de los actores
+SELECT name, MONTH(birth_date) AS mes_nacimiento
+FROM people
+WHERE birth_date IS NOT NULL AND category = 'Actor';
+
+-- Actores nacidos en un mes específico (ej: enero = 1)
+SELECT name FROM people
+WHERE category = 'Actor' AND MONTH(birth_date) = 1;
+
+-- Películas estrenadas en una década (usando YEAR sobre INT)
+-- release_year ya es INT en cineDB, así que no necesita YEAR()
+SELECT title, release_year FROM movies
+WHERE release_year BETWEEN 1990 AND 1999;
