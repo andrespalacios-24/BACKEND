@@ -227,3 +227,29 @@ WHERE release_year >= 1990
 AND total_revenue IS NOT NULL
 ORDER BY total_revenue DESC
 LIMIT 10 OFFSET 0;
+
+-- =============================================================
+-- IN - USO EN INSERT, UPDATE Y DELETE
+-- =============================================================
+-- IN no solo funciona en SELECT — sirve en cualquier instrucción
+-- que tenga un WHERE: UPDATE, DELETE, y como valor en INSERT.
+
+-- DELETE de varios registros a la vez
+DELETE FROM cineDB.countries
+WHERE country_name IN ('Argentina', 'Uruguay');
+
+-- UPDATE de varias filas a la vez
+UPDATE cineDB.movies
+SET studio_id = NULL
+WHERE title IN ('Alien', 'The Shape of Water', 'Fight Club');
+
+-- SELECT — recordatorio
+SELECT name FROM people
+WHERE country_of_birth_id IN (7, 14, 4);
+
+-- REGLA: siempre que necesites filtrar por varios valores
+-- de la misma columna, usa IN en lugar de varios OR:
+-- En lugar de:
+-- WHERE country_name = 'Argentina' OR country_name = 'Uruguay'
+-- Usa:
+-- WHERE country_name IN ('Argentina', 'Uruguay')
