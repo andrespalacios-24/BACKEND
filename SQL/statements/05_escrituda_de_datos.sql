@@ -78,6 +78,16 @@ VALUES ('A24');
 -- INSERT INTO directores_backup (name, birth_date)
 -- SELECT name, birth_date FROM people WHERE category = 'Director';
 
+-- PROBAR RESTRICCIÓN UNIQUE con INSERT
+-- Si la columna tiene UNIQUE, insertar un valor duplicado da error.
+-- Útil para verificar que la restricción está aplicada correctamente.
+
+-- Intento de insertar país duplicado → ERROR:
+INSERT INTO cineDB.countries (country_name) VALUES ('Estados Unidos');
+-- Error: Duplicate entry 'Estados Unidos' for key 'uq_country'
+
+-- Intento de insertar país nuevo → OK:
+INSERT INTO cineDB.countries (country_name) VALUES ('España');
 
 -- =============================================================
 -- 2. UPDATE - Modificar datos existentes
