@@ -69,11 +69,35 @@ SELECT genre_id FROM genres WHERE genre_name IN ('Infantil', 'Animación')
 
 9. Elimina todas las películas que no tengan actores y géneros asociados.
 
-
+USE cineDB;
+SET SQL_SAFE_UPDATES = 0; --se hace para desactivar el modo seguro. se debe activar inmediatamente
+DELETE FROM movies
+WHERE movie_id NOT IN (SELECT DISTINCT movie_id FROM movie_genre)
+AND  movie_id NOT IN (SELECT DISTINCT movie_id FROM movie_actor);
+SET SQL_SAFE_UPDATES = 1; -- activar de nuevo el modo seguro
 
 10. Inserta 2 reviews para la película "Gladiator" y 1 review para la película "Titanic".
+-- consultando el id
+USE cineDB;
+INSERT INTO movie_review (movie_id,review_text, review_timestamp)
+VALUES (16,'perrona la pelicula, la verdad','2026-06-06 17:54:30'),
+	   (16,'malita la pelicula, pero bueno','2026-06-06 17:57:00'),
+       (6, 'muy pero muy malita','2026-06-06 17:59:50' );
+
+-- sin consultar el id sino solo con el nombre
+INSERT INTO movie_review (movie_id,review_text, review_timestamp)
+VALUES (
+(SELECT movie_id FROM movies WHERE title = 'Gladiator'),
+'perrona la pelicula, la verdad','2026-06-06 17:54:30'
+);
 
 11. Inserta 3 reviews para la película "The Matrix" sin ingresar la fecha y hora de la review.
+
+USE cineDB;
+INSERT INTO movie_review (movie_id,review_text)
+VALUES (18, 'mala, todo culpa de serpe'),
+	   (18, 'la mejor, gracias a serpe'),
+       (18, 'ni buena ni mala, firmes con serpe');
 
 12. Inserta los siguientes premios:
     - Oscar Mejor Película
@@ -82,6 +106,16 @@ SELECT genre_id FROM genres WHERE genre_name IN ('Infantil', 'Animación')
     - Globo de Oro Mejor Película
     - Globo de Oro Mejor Director
     - Globo de Oro Mejor Actor
+
+USE cineDB;
+INSERT INTO awards (award_name)
+VALUES 
+('Oscar Mejor Película'),
+('Oscar Mejor Director'),
+('Oscar Mejor Actor'),
+('Globo de Oro Mejor Película'),
+('Globo de Oro Mejor Director'),
+('Globo de Oro Mejor Actor');
 
 13. Asocia los siguientes premios a las películas:
 	- Oscar Mejor Película:
@@ -106,3 +140,13 @@ SELECT genre_id FROM genres WHERE genre_name IN ('Infantil', 'Animación')
     - Globo de Oro Mejor Actor:
 		- The Irishman
 		- Alien
+
+		USE cineDB;
+INSERT INTO movie_award (movie_id, award_id)
+VALUES (17,1),
+(7,1),(16,1),(13,1),(6,1),
+(6,2),(18,2),
+(10,3),(5,3),
+(15,4),(16,4),
+(8,5),(16,5),(11,5),
+(7,6),(3,6);
