@@ -63,13 +63,39 @@ WHERE g.genre_name IN ('Aventura','Terror')
 
 8. Obtener los estudios de cine y la cantidad de películas producidas por cada uno. Ordenado por cantidad descendente.
 
-
+USE cineDB;
+SELECT s.studio_name AS estudio,
+COUNT(m.movie_id) AS total_peliculas
+FROM studios s
+LEFT JOIN movies m ON s.studio_id = m.studio_id
+GROUP BY s.studio_name
+ORDER BY total_peliculas DESC;
 
 9. Obtener el total de películas por cada género (incluir los géneros que no tengan películas asociadas).
+
+USE cineDB;
+SELECT g.genre_name AS genero,
+COUNT(mg.movie_id) AS total_genero
+FROM genres g
+LEFT JOIN movie_genre mg ON g.genre_id = mg.genre_id
+GROUP BY g.genre_name
+
 
 10. Obtener las películas que ganaron el premio "Oscar" o "Globo de Oro" a "Mejor Película". 
 	- Mostrar el nombre de la película, el director, el estudio y año de estreno. 
     - Ten en cuenta que las películas sin director o estudio asociado deben también mostrarse en el resultado.
+
+USE cineDB;
+SELECT m.title AS pelicula, p.name AS nombre, s.studio_name AS estudio, m.release_year AS año_estreno,
+a.award_name
+FROM movies m
+INNER JOIN movie_award ma ON m.movie_id = ma.movie_id
+INNER JOIN awards a ON ma.award_id = a.award_id
+LEFT JOIN people p ON m.director_id = p.people_id
+LEFT JOIN studios s ON m.studio_id = s.studio_id
+WHERE a.award_name IN ('Globo de Oro Mejor Película','Oscar Mejor Película');
+
+
 
 11. Obtiene las películas que tienen reviews, mostrando nombre de la película y cantidad de reviews que tiene.
 
