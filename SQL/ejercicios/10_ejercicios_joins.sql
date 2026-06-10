@@ -1,19 +1,69 @@
 
 1. Obtener las películas que tengan un director asociado. Mostrar el título de la pelicula, el año de estreno y el nombre del director. Ordena por película.
 
+USE cineDB;
+SELECT m.title AS pelicula, m.release_year AS estreno, p.name AS director 
+FROM movies m
+JOIN people p ON m.director_id = p.people_id
+ORDER BY m.title
+
 2. Obtener las películas que tengan un estudio asociado. Mostrar el título de la película y el estudio. Ordena por nombre de estudio.
+
+USE cineDB;
+SELECT m.title AS pelicula,  s.studio_name AS estudio 
+FROM movies m
+JOIN studios s ON m.studio_id = s.studio_id
+ORDER BY s.studio_name
 
 3. Obtener las películas junto con el estudio que las produjo (tengan o no un estudio asociado), ordenadas por nombre de película.
 
+USE cineDB;
+SELECT m.title AS pelicula,  s.studio_name AS estudio 
+FROM movies m
+LEFT JOIN studios s ON m.studio_id = s.studio_id
+ORDER BY m.title
+
 4. Obtener los nombres de los actores y las películas en las que han participado. Ordena por actor y película.
+
+USE cineDB;
+SELECT p.name AS nombre, m.title AS titulo
+FROM people p
+INNER JOIN movie_actor ma ON p.people_id = ma.actor_id
+INNER JOIN movies m ON ma.movie_id = m.movie_id
+ORDER BY p.name, m.title; 
 
 5. Obtener la lista de las películas con sus géneros asociados. Ordena por película.
 
+USE cineDB;
+SELECT m.title AS pelicula, g.genre_name AS genero
+FROM movies m
+INNER JOIN movie_genre mg ON m.movie_id = mg.movie_id
+INNER JOIN genres g ON mg.genre_id = g.genre_id
+ORDER BY title
+
 6. Obtener todas las películas de un director específico (por ejemplo, "Christopher Nolan").
+
+USE cineDB;
+SELECT m.title AS pelicula, p.name AS nombre
+FROM movies m
+INNER JOIN people p ON m.director_id = p.people_id
+WHERE p.name= 'Christopher Nolan'
+
 
 7. Obtener los actores que han participado en películas de "Aventura" o "Terror".
 
+USE cineDB;
+SELECT DISTINCT p.name AS nombre, m.title AS pelicula
+FROM people p
+INNER JOIN movie_actor ma ON p.people_id = ma.actor_id
+INNER JOIN movies m ON ma.movie_id = m.movie_id
+INNER JOIN movie_genre mg ON m.movie_id = mg.movie_id
+INNER JOIN genres g ON mg.genre_id = g.genre_id
+WHERE g.genre_name IN ('Aventura','Terror')
+
 8. Obtener los estudios de cine y la cantidad de películas producidas por cada uno. Ordenado por cantidad descendente.
+
+
 
 9. Obtener el total de películas por cada género (incluir los géneros que no tengan películas asociadas).
 
