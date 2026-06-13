@@ -95,26 +95,102 @@ LEFT JOIN people p ON m.director_id = p.people_id
 LEFT JOIN studios s ON m.studio_id = s.studio_id
 WHERE a.award_name IN ('Globo de Oro Mejor Película','Oscar Mejor Película');
 
-
-
 11. Obtiene las películas que tienen reviews, mostrando nombre de la película y cantidad de reviews que tiene.
 
+USE cineDB;
+SELECT m.title AS pelicula,
+COUNT(mr.movie_id) AS total_criticas
+FROM movies m
+INNER JOIN movie_review mr ON m.movie_id = mr.movie_id
+WHERE mr.review_id IS NOT NULL
+GROUP BY m.title
+
+
 12. Obtiene la suma total de espectadores de películas producidas por "Warner Bros".
+
+USE cineDB;
+SELECT s.studio_name AS ESTUDIO,
+SUM(m.total_viewers) AS total_espectadores
+FROM studios s 
+INNER JOIN movies m ON s.studio_id = m.studio_id
+WHERE s.studio_name = 'Warner Bros'
+GROUP BY s.studio_name
 
 13. Obtener todos los premios de cada película: 
 	- Mostrar "nombre premio: título de la película (año estreno)" en la misma columna. 
     - Si el año de estreno es nulo, mostrar "Sin Especificar".
     - Ordenar por película.
 
+USE cineDB;
+SELECT 
+CONCAT(
+a.award_name, '-', 
+m.title, '-', 
+'(', IFNULL(m.release_year, 'sin especificar'),')' 
+) AS 'PREMIOS GANADOS'
+FROM awards a 
+INNER JOIN movie_award ma ON a.award_id = ma.award_id
+INNER JOIN movies m ON ma.movie_id = m.movie_id
+ORDER BY title
+
 14. Obtener las películas que obtuvieron más de un premio.  
+
+
+USE cineDB;
+SELECT m.title, COUNT(ma.award_id) AS 'cantidad de premios'
+FROM movies m 
+INNER JOIN movie_award ma ON m.movie_id = ma.movie_id
+GROUP BY m.title
+HAVING COUNT(ma.award_id) > 1;
 
 15. Obtener las películas que obtuvieron uno o ningun premio. 
 
+USE cineDB;
+SELECT m.title, COUNT(ma.award_id) AS 'cantidad de premios'
+FROM movies m 
+LEFT JOIN movie_award ma ON m.movie_id = ma.movie_id
+GROUP BY m.title
+HAVING COUNT(ma.award_id) <= 1;
+
 16. Obtener los actores que participaron en ninguna o dos películas.
+
+USE cineDB;
+SELECT p.name, COUNT(ma.movie_id) AS peliculas
+FROM people p
+LEFT JOIN movie_actor ma ON p.people_id = ma.actor_id
+WHERE p.category = 'Actor'
+GROUP BY p.people_id
+HAVING COUNT(ma.movie_id) = 0 OR COUNT(ma.movie_id) = 2;
 
 17. Obtener las personas que no tienen películas asociadas.
 
+USE cineDB;
+SELECT p.name, COUNT(ma.movie_id) AS peliculas
+FROM people p
+LEFT JOIN movie_actor ma ON p.people_id = ma.actor_id
+WHERE p.category = 'Actor'
+GROUP BY p.people_id
+HAVING COUNT(ma.movie_id) = 0;
+-- mejor estructurado y como debe de ser 
+SELECT p.name AS 'Actor / Director'
+FROM people p
+LEFT JOIN movies m ON m.director_id = p.people_id
+WHERE p.category = 'Director' AND m.director_id IS NULL
+UNION
+SELECT p.name AS 'Actor / Director'
+FROM people p
+LEFT JOIN movie_actor ma ON ma.actor_id = p.people_id
+WHERE p.category = 'Actor' AND ma.movie_id IS NULL    
+ORDER BY 1;
+
 18. Obtener las reviews de las películas "Gladiator" y "The Matrix".
+
+USE cineDB;
+SELECT  mr.review_text AS reseña, m.title AS pelicula
+FROM movies m
+INNER JOIN movie_review mr ON m.movie_id = mr.movie_id
+WHERE m.title IN ('Gladiator','The Matrix');
+
 
 19. Obtener los nombres de países que no estén asociados a ninguna persona.
 
