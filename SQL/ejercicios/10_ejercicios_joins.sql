@@ -194,4 +194,16 @@ WHERE m.title IN ('Gladiator','The Matrix');
 
 19. Obtener los nombres de países que no estén asociados a ninguna persona.
 
+USE cineDB;
+SELECT  c.country_name AS 'pais sin asociados'
+FROM countries c
+LEFT JOIN people p ON c.country_id = country_of_birth_id
+WHERE country_of_birth_id IS NULL;
+
 20. Obtener el país de nacimiento de todas las personas. Mostrar "No Especificado" si no hay datos. Ordena por nombre.
+
+USE cineDB;
+SELECT IFNULL(p.name,'No Especificado' ) AS Nombre, IFNULL(c.country_name, 'No Especificado') AS 'Pais'
+FROM  people p
+LEFT JOIN countries c ON  country_of_birth_id = c.country_id
+ORDER BY p.name
