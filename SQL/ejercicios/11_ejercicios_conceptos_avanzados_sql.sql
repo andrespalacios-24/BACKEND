@@ -7,21 +7,71 @@
     - Total de espectadores 
     - Total de recaudación
 
+USE cineDB;
+CREATE VIEW vw_movie AS
+SELECT m.movie_id AS Pelicula_id, m.title AS nombre, m.release_year AS año_estreno,
+ m.director_id AS director_id, p.name AS nombre_director, 
+s.studio_id AS estudio_id, s.studio_name AS nombre_estudio,
+ m.total_viewers AS total_vistas, m.total_revenue AS ganancia_total
+FROM movies m
+LEFT JOIN people p ON m.director_id = p.people_id
+LEFT JOIN studios s ON m.studio_id = s.studio_id
+
+
 2. Crear una vista llamada "vw_movie_90" con la siguiente información de todas las películas estrenadas en la década del '90:
    	- ID de película
     - Nombre de película
     - Año Estreno
     - Total de espectadores 
     - Total de recaudación
-    
+
+    USE cineDB;
+CREATE VIEW vw_movie_90 AS
+SELECT m.movie_id AS Pelicula_id, m.title AS nombre, m.release_year AS año_estreno,
+ m.total_viewers AS total_vistas, m.total_revenue AS ganancia_total
+FROM movies m
+WHERE m.release_year BETWEEN 1990 AND 1999; 
+
 3. Crear una vista llamada "vw_movie_actor" con las películas y sus actores correspondientes.
 
+USE cineDB;
+CREATE VIEW vw_movie_actor AS
+SELECT title AS titulo, name AS nombre
+FROM movies m
+INNER JOIN movie_actor ma ON m.movie_id = ma.movie_id
+INNER JOIN people p ON ma.actor_id = p.people_id
+
+
 4. Crear una vista llamada "vw_movie_director" con las películas y su correspondiente director.
+
+USE cineDB;
+CREATE VIEW vw_movie_director AS
+SELECT title AS titulo, name AS nombre
+FROM movies m
+INNER JOIN people p ON m.director_id = p.people_id
+WHERE p.category= 'Director';
+
 
 5. Utilizando las vistas creadas en los ejercicios 3 y 4, y la sentencia "UNION", recupera los actores y director de la película "The Matrix":
 	- Muestra los encabezados de columna como "Nombre" y "Rol"
     - En la columna "Rol", indica si es Actor o Director. 
     - Ordena los resultados por Nombre.
+
+SELECT nombre AS persona, 'Actor' AS 'Rol'
+FROM vw_movie_actor
+WHERE titulo= 'The Matrix'
+UNION
+SELECT nombre AS persona, 'Director' AS 'Rol'
+FROM vw_movie_director
+WHERE titulo= 'The Matrix'
+ORDER BY persona;
+
+--la de mouredev:
+SELECT Actor AS Nombre, 'Actor' AS Rol FROM vw_movie_actor WHERE Película = 'The Matrix'
+   UNION
+   SELECT Director  AS Nombre, 'Director' AS Rol FROM vw_movie_director WHERE Película = 'The Matrix'
+   ORDER BY Nombre;
+
 
 6. Crear cinco procedimientos: 
 	- "sp_insert_movie" para insertar una nueva película.
