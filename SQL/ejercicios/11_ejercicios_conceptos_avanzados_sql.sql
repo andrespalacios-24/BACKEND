@@ -80,6 +80,48 @@ SELECT Actor AS Nombre, 'Actor' AS Rol FROM vw_movie_actor WHERE Película = 'Th
     - "sp_update_viewers" para actualizar la cantidad de espectadores de una película.
     - "sp_update_revenue" para actualizar la recaudación de una película.
 
+USE cineDB;
+DELIMITER //
+CREATE PROCEDURE sp_insert_movie(
+IN new_title VARCHAR(100),
+IN new_release_year INT, 
+IN new_director_id INT,
+IN new_studio_id INT,
+IN new_total_viewers BIGINT,
+IN new_total_revenue DECIMAL(15,2)
+)
+BEGIN
+INSERT INTO movies(title, release_year,director_id, studio_id, total_viewers, total_revenue)
+VALUES (new_title, new_release_year, new_director_id, new_studio_id, new_total_viewers, new_total_revenue );
+END //
+
+CREATE PROCEDURE sp_delete_movie(IN movie_title VARCHAR(100))
+BEGIN 
+DELETE FROM movies WHERE title = movie_title;
+END //
+
+CREATE PROCEDURE sp_update_release_year(IN p_title VARCHAR(150), IN new_release_year INT)
+BEGIN 
+UPDATE movies
+SET release_year= new_release_year
+WHERE title = p_title;
+END//
+
+CREATE PROCEDURE sp_update_viewers (IN p_title VARCHAR(150), IN new_total_viewers BIGINT)
+BEGIN 
+UPDATE movies
+SET total_viewers= new_total_viewers
+WHERE title = p_title;
+END//
+
+CREATE PROCEDURE sp_update_revenue (IN p_title VARCHAR(150), IN new_total_revenue DECIMAL(15,2))
+BEGIN 
+UPDATE movies
+SET total_revenue= new_total_revenue
+WHERE title = p_title;
+END//
+DELIMITER ;
+
 7. Crear triggers para registrar inserciones, actualizaciones y eliminaciones en la tabla "movies".
    La información de la operación realizada se registrará en la tabla "audit_log":
 	- nombre de la tabla impactada
