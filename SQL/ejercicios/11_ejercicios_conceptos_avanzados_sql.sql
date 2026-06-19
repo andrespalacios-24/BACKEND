@@ -129,6 +129,58 @@ DELIMITER ;
     - el ID del registro impactado
     - el usuario y fecha y hora que se realizó
     - los datos impactados (usando la función JSON_OBJECT() para almacenar los datos previos y nuevos de manera estructurada).	
+-- INSERCIONES
+USE cineDB;
+DELIMITER //
+CREATE TRIGGER tg_after_insert
+AFTER INSERT ON movies
+FOR EACH ROW
+BEGIN
+    INSERT INTO audit_log (table_name, operation_type, record_id, changed_by, change_timestamp, new_values)
+    VALUES ('movies', 'INSERT', NEW.movie_id, USER(), NOW(),
+    JSON_OBJECT('title', NEW.title, 'release_year', NEW.release_year, 
+	'director_id', NEW.director_id, 'studio_id', NEW.studio_id, 
+	'total_viewers', NEW.total_viewers, 'total_revenue', NEW.total_revenue));
+END //
+DELIMITER ;
+
+--actualizaciones
+
+USE cineDB;
+DELIMITER //
+CREATE TRIGGER tg_after_update
+AFTER UPDATE ON movies
+FOR EACH ROW
+BEGIN
+    INSERT INTO audit_log (table_name, operation_type, record_id, changed_by, change_timestamp, old_values, new_values)
+    VALUES ('movies', 'UPDATE', OLD.movie_id, USER(), NOW(),
+    JSON_OBJECT('title', OLD.title, 'release_year', OLD.release_year, 
+	'director_id', OLD.director_id, 'studio_id', OLD.studio_id, 
+	'total_viewers', OLD.total_viewers, 'total_revenue', OLD.total_revenue),
+    
+     JSON_OBJECT('title', NEW.title, 'release_year', NEW.release_year, 
+	'director_id', NEW.director_id, 'studio_id', NEW.studio_id, 
+	'total_viewers', NEW.total_viewers, 'total_revenue', NEW.total_revenue)
+    );
+END //
+DELIMITER ;
+
+-- eliminaciones
+
+USE cineDB;
+DELIMITER //
+CREATE TRIGGER after_delete
+AFTER DELETE ON movies
+FOR EACH ROW
+BEGIN
+	INSERT INTO audit_log (table_name, operation_type, record_id, changed_by, change_timestamp, old_values)
+	VALUES ('movies', 'DELETE', OLD.movie_id, USER(), NOW(), 
+    JSON_OBJECT('title', OLD.title, 'release_year', OLD.release_year, 
+	'director_id', OLD.director_id, 'studio_id', OLD.studio_id, 
+	'total_viewers', OLD.total_viewers, 'total_revenue', OLD.total_revenue));
+END
+//
+DELIMITER ;
 
 8. Insertar la película "Avatar" utilizando el procedimiento creado en el ejercicio 6.
     - Nombre: Avatar
@@ -138,7 +190,18 @@ DELIMITER ;
     - Total Espectadores: 331000000
     - Total Recaudación: 2923706026
 
+CALL cineDB.sp_insert_movie ('Avatar', 2009, 64, 6, 331000000, 2923706026)
+
 9. Utiliza la vista creada en el ejercicio 1 para recuperar la información de las películas "Titanic", "Gladiator" y "Avatar".
+
+USE cineDB;
+SELECT * FROM vw_movie WHERE nombre = 'Titanic';
+
+SELECT * FROM vw_movie WHERE nombre = 'Gladiator';
+
+SELECT * FROM vw_movie WHERE nombre = 'Avatar';
+-- por mouredev mas corto:
+SELECT * FROM vw_movie WHERE nombre IN ('Titanic', 'Gladiator', 'Avatar');
 
 10. Utilizando los procedimientos creados en el ejercicio 6:
 	- Actualiza a 26000300 la cantidad de espectadores de "The Godfather".
@@ -146,11 +209,30 @@ DELIMITER ;
     - Actualiza a 95000000.00 la recaudación de "Edward Scissorhands".
     - Elimina la película "Avatar".
     
+USE cineDB;
+CALL sp_update_viewers('The Godfather', 26000300);
+
+CALL sp_update_release_year('Schindler’s List', 1993);
+
+CALL sp_update_revenue('Edward Scissorhands',95000000.00);
+
+CALL sp_delete_movie('Avatar');
+
+
 11. Revisa la tabla de auditoría y chequea que los triggers creados en el ejercicio 7 se ejecutaron correctamente.
+
+--FUNCIONA CORRECTAMENTE 
 
 12. Crear dos índices, llamados "idx_release_year" e "idx_revenue", en las columnas "release_year" y "total_revenue" de la tabla "movies". 
 
+USE cineDB;
+CREATE INDEX idx_release_year ON movies (release_year);
+CREATE INDEX idx_revenue ON movies (total_revenue);
+
 13. Crear un índice, llamado "idx_movie_actor", compuesto por las columnas "movie_id" y "actor_id" de la tabla "movie_actor".
+
+USE cineDB;876
+CREATE INDEX idx_movie_actor ON movie_actor (movie_id, actor_id);
 
 14. Elimina el índice "idx_revenue" creado en el ejercicio 12.
 
