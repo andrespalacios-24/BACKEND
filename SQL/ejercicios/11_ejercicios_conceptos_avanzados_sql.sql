@@ -227,21 +227,45 @@ CALL sp_delete_movie('Avatar');
 
 USE cineDB;
 CREATE INDEX idx_release_year ON movies (release_year);
+
 CREATE INDEX idx_revenue ON movies (total_revenue);
 
 13. Crear un índice, llamado "idx_movie_actor", compuesto por las columnas "movie_id" y "actor_id" de la tabla "movie_actor".
 
-USE cineDB;876
+USE cineDB;
 CREATE INDEX idx_movie_actor ON movie_actor (movie_id, actor_id);
 
 14. Elimina el índice "idx_revenue" creado en el ejercicio 12.
 
+USE cineDB;
+DROP INDEX idx_revenue ON movies;
+
 15. Elimina la vista creada en el ejercicio 2.
+
+USE cineDB;
+DROP VIEW IF EXISTS vw_movie_90;
 
 16. Elimina el procedimiento "sp_update_release_year" creado en el ejercicio 6.
 
+USE cineDB;
+DROP PROCEDURE IF EXISTS sp_update_release_year;
+
 17. Usando "Transacciones", inserta una película con el procedimiento creado en el ejercicio 6 y luego confirma dicha operación. Verifica si la película fue insertada.
 
+START TRANSACTION;
+CALL sp_insert_movie('Toy Story', 1995, 64, 6, 331000000, 373000000);
+SELECT * FROM vw_movie WHERE Título = 'Toy Story';
+COMMIT;
+SELECT * FROM vw_movie WHERE Título = 'Toy Story';    
+    
+
 18. Usando "Transacciones", inserta una película con el procedimiento creado en el ejercicio 6 y luego vuelve atrás dicha operación. Verifica si la película fue insertada.
+
+START TRANSACTION;    
+CALL sp_insert_movie('Mad Max: Fury Road', 2015, 65, 8, 45200000, 280040050);
+SELECT * FROM vw_movie WHERE Título = 'Mad Max: Fury Road'; 
+ROLLBACK;
+SELECT * FROM vw_movie WHERE Título = 'Mad Max: Fury Road'; 
+
 
 NOTA: para los ejercicios 17 y 18 asegúrate de tener la opción "Auto-Commit Transactions" (del menú "Query") desactivada.
