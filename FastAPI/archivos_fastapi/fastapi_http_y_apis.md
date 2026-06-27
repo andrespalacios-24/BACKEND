@@ -74,13 +74,108 @@ async def root():
 
 Los parámetros `title`, `description` y `version` aparecen en la documentación automática (`/docs`).
 
-### Estructura recomendada de proyecto
+---
 
-Para una API simple de estudio, esta organización es suficiente:
+### Modelos con Pydantic (`BaseModel`)
+
+#### Qué es
+
+Pydantic es la librería de validación de datos que FastAPI usa internamente. Al definir una clase que hereda de `BaseModel`, se crea un **esquema** que describe la estructura de un objeto: sus campos y sus tipos.
+
+#### Para qué sirve
+
+- Validar automáticamente los datos que llegan en el body de una petición.
+- Serializar objetos Python a JSON para devolverlos en la respuesta.
+- Documentar la estructura de datos en Swagger UI (`/docs`).
+
+#### Cómo se define
+
+```python
+from pydantic import BaseModel
+
+class User(BaseModel):
+    id: int
+    name: str
+    surname: str
+    url: str
+    age: int
+```
+
+Cada atributo de la clase es un campo con su tipo anotado. Pydantic valida que los datos recibidos cumplan esos tipos. Si no, FastAPI devuelve `422` automáticamente.
+
+---
+
+### Diferencia entre devolver un dict y devolver un modelo Pydantic
+
+El ejemplo de MoureDev muestra los dos enfoques en el mismo archivo:
+
+```python
+from fastapi import FastAPI
+from pydantic import BaseModel
+
+app = FastAPI()
+
+class User(BaseModel):
+    id: int
+    name: str
+    surname: str
+    url: str
+    age: int
+
+# Datos de prueba en memoria (simula una base de datos)
+users_list = [
+    User(id=1, name="Brais", surname="Moure", url="https://moure.dev", age=35),
+    User(id=2, name="Moure", surname="Dev", url="https://mouredev.com", age=35),
+    User(id=3, name="Brais", surname="Dahlberg", url="https://haakon.com", age=33)
+]
+
+# Opcion A: devolver lista de dicts escritos a mano
+@app.get("/usersjson")
+async def usersjson():
+    return [
+        {"name": "Brais", "surname": "Moure", "url": "https://moure.dev", "age": 35},
+        {"name": "Moure", "surname": "Dev", "url": "https://mouredev.com", "age": 35},
+        {"name": "Haakon", "surname": "Dahlberg", "url": "https://haakon.com", "age": 33}
+    ]
+
+# Opcion B: devolver lista de objetos User (Pydantic los serializa a JSON)
+@app.get("/users")
+async def users():
+    return users_list
+```
+
+| Aspecto          | Dict (`/usersjson`)                          | Modelo Pydantic (`/users`)                    |
+|------------------|----------------------------------------------|-----------------------------------------------|
+| Validacion       | Ninguna                                      | Automatica por Pydantic                       |
+| Documentacion    | Sin schema en `/docs`                        | Schema completo visible en `/docs`            |
+| Escalabilidad    | Dificil de mantener al crecer                | Centralizado en la clase                      |
+| Serializacion    | Manual                                       | Automatica                                    |
+| Uso recomendado  | Pruebas rapidas o respuestas muy simples     | Siempre que el dato tenga estructura definida |
+
+La Opcion A existe para mostrar el contraste. En la practica siempre se usa Pydantic.
+
+---
+
+### Lista en memoria como base de datos temporal
+
+Durante el aprendizaje es comun usar una lista de objetos Pydantic como almacenamiento temporal, antes de conectar una base de datos real. Permite desarrollar y probar todos los endpoints del CRUD sin configurar SQL todavia.
+
+```python
+users_list = [
+    User(id=1, name="Brais", surname="Moure", url="https://moure.dev", age=35),
+    ...
+]
+```
+
+Es un estado global en memoria: se pierde cada vez que se reinicia el servidor. Suficiente para aprender la logica de los endpoints.
+
+---
+
+### Estructura recomendada de proyecto
 
 ```
 FastAPI/
-├── main.py          # Punto de entrada, instancia de app, inclusión de routers
+├── main.py          # Punto de entrada, instancia de app, inclusion de routers
 ├── routers/         # Un archivo por recurso (users.py, products.py)
 ├── models/          # Modelos Pydantic (esquemas de datos)
 └── .venv/           # Entorno virtual
@@ -90,10 +185,11 @@ FastAPI/
 
 ```bash
 source ~/BACKEND/FastAPI/.venv/bin/activate
-uvicorn main:app --reload
+uvicorn users:app --reload   # si el archivo se llama users.py
+uvicorn main:app --reload    # si el archivo se llama main.py
 ```
 
-Referencia: [FastAPI - Tutorial](https://fastapi.tiangolo.com/tutorial/)
+Referencia: [FastAPI - Tutorial](https://fastapi.tiangolo.com/tutorial/) · [Pydantic - Models](https://docs.pydantic.dev/latest/concepts/models/)
 
 ---
 
@@ -650,6 +746,168 @@ Referencia: [FastAPI - Header Parameters](https://fastapi.tiangolo.com/tutorial/
 
 ---
 
+## 8. CRUD
+
+### Qué es
+
+CRUD es el acrónimo de las cuatro operaciones básicas que se pueden hacer sobre cualquier dato:
+
+| Letra | Operación | Método HTTP | Qué hace                        |
+|-------|-----------|-------------|---------------------------------|
+| C     | Create    | POST        | Crear un nuevo recurso          |
+| R     | Read      | GET         | Leer uno o varios recursos      |
+| U     | Update    | PUT / PATCH | Modificar un recurso existente  |
+| D     | Delete    | DELETE      | Eliminar un recurso             |
+
+Casi toda API REST es, en su base, un CRUD sobre uno o más recursos. Cuando MoureDev habla de "hacer el CRUD de usuarios", significa implementar los cuatro endpoints que permiten crear, leer, actualizar y eliminar usuarios.
+
+### Para qué sirve
+
+Es el patrón de referencia para organizar los endpoints de un recurso. Antes de agregar lógica compleja, una API bien hecha tiene los cuatro endpoints CRUD funcionando correctamente.
+
+---
+
+### CRUD completo sobre `users_list` (lista en memoria)
+
+El siguiente ejemplo implementa el CRUD completo del recurso `User` usando la lista en memoria del ejemplo de MoureDev. Cada endpoint corresponde a una letra del acrónimo.
+
+```python
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+from typing import Optional
+
+app = FastAPI()
+
+class User(BaseModel):
+    id: int
+    name: str
+    surname: str
+    url: str
+    age: int
+
+users_list = [
+    User(id=1, name="Brais", surname="Moure", url="https://moure.dev", age=35),
+    User(id=2, name="Moure", surname="Dev", url="https://mouredev.com", age=35),
+    User(id=3, name="Brais", surname="Dahlberg", url="https://haakon.com", age=33)
+]
+
+
+# ---------------------------------------------------------------------------
+# READ — Leer todos los usuarios
+# ---------------------------------------------------------------------------
+@app.get("/users")
+async def get_users():
+    return users_list
+
+
+# ---------------------------------------------------------------------------
+# READ — Leer un usuario por ID (path param)
+# ---------------------------------------------------------------------------
+@app.get("/users/{user_id}")
+async def get_user(user_id: int):
+    user = next((u for u in users_list if u.id == user_id), None)
+    if user is None:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    return user
+
+
+# ---------------------------------------------------------------------------
+# CREATE — Agregar un nuevo usuario
+# ---------------------------------------------------------------------------
+@app.post("/users", status_code=201)
+async def create_user(user: User):
+    # Verificar que el ID no exista ya
+    if any(u.id == user.id for u in users_list):
+        raise HTTPException(status_code=400, detail="Ya existe un usuario con ese ID")
+    users_list.append(user)
+    return user
+
+
+# ---------------------------------------------------------------------------
+# UPDATE — Reemplazar un usuario completo (PUT)
+# ---------------------------------------------------------------------------
+@app.put("/users/{user_id}")
+async def update_user(user_id: int, updated_user: User):
+    for index, u in enumerate(users_list):
+        if u.id == user_id:
+            users_list[index] = updated_user
+            return updated_user
+    raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+
+# ---------------------------------------------------------------------------
+# DELETE — Eliminar un usuario
+# ---------------------------------------------------------------------------
+@app.delete("/users/{user_id}", status_code=204)
+async def delete_user(user_id: int):
+    for index, u in enumerate(users_list):
+        if u.id == user_id:
+            users_list.pop(index)
+            return
+    raise HTTPException(status_code=404, detail="Usuario no encontrado")
+```
+
+---
+
+### Desglose de cada operación
+
+#### R — Read (GET /users y GET /users/{user_id})
+
+Dos endpoints de lectura: uno devuelve toda la lista, el otro busca por ID usando `next()` con una expresión generadora. Si no encuentra el usuario devuelve `None` y se lanza un `404`.
+
+```python
+user = next((u for u in users_list if u.id == user_id), None)
+```
+
+`next()` recorre el generador y devuelve el primer elemento que cumpla la condición, o `None` si ninguno cumple. Es la forma idiomática de buscar un elemento en una lista en Python.
+
+#### C — Create (POST /users)
+
+Recibe un objeto `User` en el body, verifica que el ID no exista ya (`any()`), y lo agrega a la lista. Si el ID ya existe devuelve `400 Bad Request`.
+
+```python
+if any(u.id == user.id for u in users_list):
+    raise HTTPException(status_code=400, detail="Ya existe un usuario con ese ID")
+```
+
+#### U — Update (PUT /users/{user_id})
+
+Recorre la lista con `enumerate()` para tener acceso al índice, y reemplaza el elemento en esa posición con el objeto actualizado. Si no existe devuelve `404`.
+
+```python
+for index, u in enumerate(users_list):
+    if u.id == user_id:
+        users_list[index] = updated_user
+        return updated_user
+```
+
+#### D — Delete (DELETE /users/{user_id})
+
+Igual que el update: busca por índice y usa `pop(index)` para eliminar el elemento de la lista. Devuelve `204` (sin contenido en la respuesta).
+
+---
+
+### Flujo de prueba del CRUD en Thunder Client / Postman
+
+```
+1. GET  /users              → ver los 3 usuarios iniciales
+2. POST /users  body: {...} → agregar un usuario nuevo
+3. GET  /users              → verificar que aparece el nuevo
+4. GET  /users/4            → leer solo el usuario recién creado
+5. PUT  /users/4  body: {...} → actualizar sus datos
+6. GET  /users/4            → verificar los datos actualizados
+7. DELETE /users/4          → eliminar
+8. GET  /users/4            → debe devolver 404
+```
+
+### Limitación de la lista en memoria
+
+Al reiniciar el servidor (`Ctrl+C` y `uvicorn ... --reload`), `users_list` vuelve a su estado inicial. Los cambios no persisten. Esto es esperado en esta etapa del aprendizaje. La persistencia real se agrega conectando una base de datos (SQLite, PostgreSQL) más adelante en el roadmap.
+
+Referencia: [FastAPI - Body](https://fastapi.tiangolo.com/tutorial/body/) · [FastAPI - HTTPException](https://fastapi.tiangolo.com/tutorial/handling-errors/) · [FastAPI - Path Parameters](https://fastapi.tiangolo.com/tutorial/path-params/)
+
+---
+
 ## Resumen general
 
 ```
@@ -661,9 +919,14 @@ DELETE → eliminar recurso, sin body, código 200 o 204
 Path params  → identifican el recurso (/users/42)
 Query params → filtran o paginan (/users?role=admin)
 
+Pydantic     → BaseModel define esquema, valida tipos, serializa a JSON
+CRUD         → Create/Read/Update/Delete = POST/GET/PUT/DELETE sobre un recurso
+Lista memoria → almacenamiento temporal durante el aprendizaje (se pierde al reiniciar)
+
 Routers      → dividen la API en archivos por recurso
 
 Status codes → 2xx éxito · 4xx error del cliente · 5xx error del servidor
+HTTPException → lanza errores HTTP desde cualquier punto del endpoint
 
 Estáticos    → archivos servidos desde disco (StaticFiles)
 Cookies      → estado persistente en el cliente (sesiones)
