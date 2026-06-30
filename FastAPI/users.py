@@ -21,3 +21,6 @@ user(id=3, name="kiyo",surname="zaki",url="kiyozaki.com",age =55)
 async def users():
     return users_list
 
+@app.get("/userid/{id}")
+async def userid(id: int):
+    return 

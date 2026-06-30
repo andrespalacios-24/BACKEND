@@ -201,41 +201,83 @@ Son las dos formas que tiene un cliente de enviar datos a un endpoint GET sin us
 
 ---
 
+### El ejemplo de MoureDev: dos formas de buscar el mismo recurso
+
+MoureDev implementa los dos tipos de parámetros sobre el mismo recurso (`User`) para mostrar el contraste. La lógica de búsqueda es idéntica en ambos casos — lo que cambia es cómo el cliente envía el ID.
+
+```python
+from fastapi import FastAPI
+from pydantic import BaseModel
+
+app = FastAPI()
+
+class User(BaseModel):
+    id: int
+    name: str
+    surname: str
+    url: str
+    age: int
+
+users_list = [
+    User(id=1, name="Brais", surname="Moure", url="https://moure.dev", age=35),
+    User(id=2, name="Moure", surname="Dev", url="https://mouredev.com", age=35),
+    User(id=3, name="Brais", surname="Dahlberg", url="https://haakon.com", age=33)
+]
+
+# Path parameter — el ID forma parte de la URL
+@app.get("/user/{id}")
+async def user(id: int):
+    return search_user(id)
+
+# Query parameter — el ID va como parámetro de consulta
+@app.get("/user/")
+async def user(id: int):
+    return search_user(id)
+
+# Función auxiliar compartida por ambos endpoints
+def search_user(id: int):
+    users = filter(lambda user: user.id == id, users_list)
+    try:
+        return list(users)[0]
+    except:
+        return {"error": "No se ha encontrado el usuario"}
+```
+
+---
+
 ### 3.1 Path Parameters (parámetros de ruta)
 
 #### Qué son
 
-Valores que forman parte de la URL misma, definidos entre llaves `{}` en la ruta.
-
-#### Para qué sirven
-
-Identificar un recurso específico. La convención REST es: cuando querés un elemento concreto de una colección, su identificador va en la ruta.
+Valores que forman parte de la URL misma, definidos entre llaves `{}` en la ruta. El cliente los incluye directamente en la dirección.
 
 ```
-GET /users/42        → usuario con ID 42
-GET /products/15     → producto con ID 15
-GET /orders/8/items  → ítems del pedido 8
+GET /user/1   → busca el usuario con id=1
+GET /user/3   → busca el usuario con id=3
 ```
 
-#### Cómo se usa en FastAPI
+#### Cómo lo detecta FastAPI
 
 ```python
-@app.get("/users/{user_id}")
-async def get_user(user_id: int):
-    return {"user_id": user_id}
-
-# Múltiples path params
-@app.get("/users/{user_id}/orders/{order_id}")
-async def get_order(user_id: int, order_id: int):
-    return {"user_id": user_id, "order_id": order_id}
+@app.get("/user/{id}")
+async def user(id: int):
+    return search_user(id)
 ```
 
-- FastAPI valida automáticamente el tipo. Si `user_id` debe ser `int` y recibe `"abc"`, devuelve `422`.
-- El nombre del argumento en la función debe coincidir exactamente con el nombre entre llaves en la ruta.
+FastAPI ve `{id}` en la ruta y sabe que el segmento de la URL en esa posición es el valor del parámetro. Lo convierte a `int` automáticamente. Si el cliente envía `/user/abc`, FastAPI devuelve `422` porque `"abc"` no es convertible a `int`.
+
+El nombre del argumento en la función (`id`) debe coincidir exactamente con el nombre entre llaves en la ruta (`{id}`).
 
 #### En qué casos usar path params
 
-Cuando el valor **identifica** el recurso. Sin ese valor, la ruta no tiene sentido.
+Cuando el valor **identifica** un recurso concreto y único. Sin ese valor, la ruta no tiene sentido:
+
+```
+/user/        → ¿qué usuario? no tiene sentido sin el ID
+/user/1       → usuario 1, claro y directo
+```
+
+Convención REST: el identificador del recurso siempre va en la ruta.
 
 ---
 
@@ -243,50 +285,101 @@ Cuando el valor **identifica** el recurso. Sin ese valor, la ruta no tiene senti
 
 #### Qué son
 
-Pares `clave=valor` que van al final de la URL después de `?`, separados por `&`.
+Pares `clave=valor` que van al final de la URL después de `?`. El cliente los agrega explícitamente como parámetros nombrados.
 
 ```
-GET /products?category=libros&limit=10&skip=0
+GET /user/?id=1   → busca el usuario con id=1
+GET /user/?id=3   → busca el usuario con id=3
 ```
 
-#### Para qué sirven
-
-Filtrar, paginar u ordenar una colección de recursos. No identifican un recurso único, sino que modifican el comportamiento de la búsqueda.
-
-#### Cómo se usa en FastAPI
-
-Los query params se declaran como argumentos de la función **sin** estar en la ruta:
+#### Cómo lo detecta FastAPI
 
 ```python
-# Todos opcionales con valores por defecto
-@app.get("/products")
-async def get_products(category: str = "all", limit: int = 10, skip: int = 0):
-    return {"category": category, "limit": limit, "skip": skip}
-
-# Uno obligatorio (sin valor por defecto)
-@app.get("/search")
-async def search(q: str):
-    return {"query": q}
+@app.get("/user/")
+async def user(id: int):
+    return search_user(id)
 ```
 
-- Con valor por defecto → opcional.
-- Sin valor por defecto → obligatorio. Si no se envía, FastAPI devuelve `422`.
+FastAPI ve que `id` no está entre llaves en la ruta, entonces lo busca automáticamente en los query parameters de la URL. Si el cliente no envía `?id=...`, FastAPI devuelve `422` porque el parámetro es obligatorio (no tiene valor por defecto).
+
+Para hacerlo opcional:
+
+```python
+from typing import Optional
+
+@app.get("/user/")
+async def user(id: Optional[int] = None):
+    if id is None:
+        return {"error": "Debes proporcionar un ID"}
+    return search_user(id)
+```
 
 #### En qué casos usar query params
 
-Cuando el valor **modifica** la búsqueda pero no identifica un recurso. Sin el valor, la ruta sigue siendo válida (devolvería todos los resultados, por ejemplo).
+Cuando el parámetro **modifica o filtra** la búsqueda pero no es parte estructural de la ruta. También cuando puede ser opcional:
+
+```
+/users/              → todos los usuarios
+/users/?role=admin   → solo los admins (filtro opcional)
+/user/?id=1          → buscar por ID como filtro (estilo query)
+```
 
 ---
 
-### 3.3 Comparación directa
+### 3.3 La función auxiliar `search_user`
 
-| Aspecto              | Path param                  | Query param                        |
-|----------------------|-----------------------------|------------------------------------|
-| Posición en la URL   | Dentro de la ruta           | Después de `?`                     |
-| Ejemplo              | `/users/42`                 | `/users?role=admin`                |
-| Uso principal        | Identificar un recurso      | Filtrar, paginar, ordenar          |
-| Obligatorio          | Siempre                     | Depende del default                |
-| Declaración FastAPI  | `{nombre}` en la ruta       | Argumento sin llaves en la función |
+Ambos endpoints comparten la misma lógica de búsqueda extraída en una función separada. Esto evita repetir código (principio DRY: Don't Repeat Yourself).
+
+```python
+def search_user(id: int):
+    users = filter(lambda user: user.id == id, users_list)
+    try:
+        return list(users)[0]
+    except:
+        return {"error": "No se ha encontrado el usuario"}
+```
+
+#### Qué hace línea por línea
+
+`filter(lambda user: user.id == id, users_list)` — recorre `users_list` y devuelve un iterador con los elementos donde `user.id == id`. `filter` no ejecuta la búsqueda todavía, solo define el criterio.
+
+`list(users)[0]` — convierte el iterador a lista y toma el primer elemento. Si el ID existe, hay exactamente un resultado (los IDs son únicos). Si no existe, la lista está vacía y `[0]` lanza `IndexError`.
+
+`try / except` — captura el `IndexError` cuando la lista está vacía y devuelve un dict de error en lugar de que el servidor explote con `500`.
+
+#### Limitación de este enfoque
+
+Devolver `{"error": "..."}` con código `200 OK` es técnicamente incorrecto: el cliente recibe una respuesta exitosa aunque no se encontró el recurso. La forma correcta es usar `HTTPException`:
+
+```python
+from fastapi import HTTPException
+
+def search_user(id: int):
+    users = filter(lambda user: user.id == id, users_list)
+    try:
+        return list(users)[0]
+    except:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+```
+
+MoureDev usa el dict de error para mantener el ejemplo simple. En una API real siempre se usa `HTTPException`.
+
+---
+
+### 3.4 Comparación directa
+
+| Aspecto             | Path param `/user/{id}`     | Query param `/user/?id=1`          |
+|---------------------|-----------------------------|------------------------------------|
+| URL del cliente     | `/user/1`                   | `/user/?id=1`                      |
+| Posición en la URL  | Dentro de la ruta           | Después de `?`                     |
+| Declaración FastAPI | `{id}` en la ruta           | Argumento sin llaves en la función |
+| Obligatorio         | Siempre                     | Depende del default                |
+| Uso principal       | Identificar un recurso      | Filtrar, paginar, buscar           |
+| Convención REST     | Estándar para IDs           | Estándar para filtros opcionales   |
+
+#### Por qué MoureDev muestra los dos
+
+Para dejar claro que **el resultado es idéntico** — ambos endpoints llaman a `search_user(id)` y devuelven lo mismo — pero la forma en que el cliente construye la URL es diferente. En la práctica, para buscar un recurso por ID se usa path param. El query param para ID es menos común pero válido, y aparece en algunas APIs antiguas o con necesidades específicas.
 
 Referencia: [FastAPI - Path Parameters](https://fastapi.tiangolo.com/tutorial/path-params/) · [FastAPI - Query Parameters](https://fastapi.tiangolo.com/tutorial/query-params/)
 
@@ -294,17 +387,70 @@ Referencia: [FastAPI - Path Parameters](https://fastapi.tiangolo.com/tutorial/pa
 
 ## 4. Peticiones HTTP: POST, PUT y DELETE
 
+### El ejemplo de MoureDev: CRUD completo sobre una lista en memoria
+
+```python
+from fastapi import FastAPI
+from pydantic import BaseModel
+
+app = FastAPI()
+
+class User(BaseModel):
+    id: int
+    name: str
+    surname: str
+    url: str
+    age: int
+
+users_list = [
+    User(id=1, name="Brais", surname="Moure", url="https://moure.dev", age=35),
+    User(id=2, name="Moure", surname="Dev", url="https://mouredev.com", age=35),
+    User(id=3, name="Brais", surname="Dahlberg", url="https://haakon.com", age=33)
+]
+
+@app.post("/user/", response_model=User)
+async def user(user: User):
+    if type(search_user(user.id)) == User:
+        return {"error": "El usuario ya existe"}
+    users_list.append(user)
+    return user
+
+@app.put("/user/")
+async def user(user: User):
+    found = False
+    for index, saved_user in enumerate(users_list):
+        if saved_user.id == user.id:
+            users_list[index] = user
+            found = True
+    if not found:
+        return {"error": "No se ha actualizado el usuario"}
+    return user
+
+@app.delete("/user/{id}")
+async def user(id: int):
+    found = False
+    for index, saved_user in enumerate(users_list):
+        if saved_user.id == id:
+            del users_list[index]
+            found = True
+    if not found:
+        return {"error": "No se ha eliminado el usuario"}
+
+def search_user(id: int):
+    users = filter(lambda user: user.id == id, users_list)
+    try:
+        return list(users)[0]
+    except:
+        return {"error": "No se ha encontrado el usuario"}
+```
+
+---
+
 ### 4.1 POST — Crear un recurso
 
 #### Qué es
 
 Método para **enviar datos al servidor y crear un nuevo recurso**. Los datos van en el cuerpo (body) de la petición en formato JSON.
-
-#### Para qué sirve
-
-- Crear un nuevo usuario: `POST /users`
-- Registrar un pedido: `POST /orders`
-- Iniciar sesión (enviar credenciales): `POST /auth/login`
 
 #### Características
 
@@ -315,28 +461,33 @@ Método para **enviar datos al servidor y crear un nuevo recurso**. Los datos va
 | Cuerpo (body)  | Sí — los datos van en el body como JSON |
 | Código típico  | `201 Created` |
 
-#### Cómo se usa en FastAPI
-
-FastAPI usa **Pydantic** para definir la estructura del body. Se crea una clase que hereda de `BaseModel`:
+#### Cómo lo implementa MoureDev
 
 ```python
-from fastapi import FastAPI
-from pydantic import BaseModel
-
-app = FastAPI()
-
-class User(BaseModel):
-    nombre: str
-    edad: int
-    email: str
-
-@app.post("/users", status_code=201)
-async def create_user(user: User):
-    # user ya es un objeto Python validado
-    return {"mensaje": "Usuario creado", "usuario": user}
+@app.post("/user/", response_model=User)
+async def user(user: User):
+    if type(search_user(user.id)) == User:
+        return {"error": "El usuario ya existe"}
+    users_list.append(user)
+    return user
 ```
 
-FastAPI valida automáticamente que el body tenga los campos correctos con los tipos correctos. Si falta un campo o el tipo es incorrecto, devuelve `422`.
+**`response_model=User`** — le dice a FastAPI que la respuesta exitosa tiene la forma del modelo `User`. Esto aparece como schema en `/docs` y además filtra cualquier campo extra que no esté en el modelo antes de devolver la respuesta.
+
+**`type(search_user(user.id)) == User`** — verifica si el resultado de `search_user` es un objeto `User`. Si lo es, el usuario ya existe y se devuelve el error. Si `search_user` devuelve el dict `{"error": "..."}`, la condición es `False` y se procede a agregar.
+
+Esta es una forma válida para un ejemplo didáctico. En una API real se usaría `HTTPException`:
+
+```python
+@app.post("/user/", status_code=201)
+async def user(user: User):
+    if type(search_user(user.id)) == User:
+        raise HTTPException(status_code=400, detail="El usuario ya existe")
+    users_list.append(user)
+    return user
+```
+
+**`users_list.append(user)`** — agrega el objeto `User` directamente a la lista. Como `user` ya fue validado por Pydantic al entrar al endpoint, se garantiza que tiene todos los campos con los tipos correctos.
 
 ---
 
@@ -345,11 +496,6 @@ FastAPI valida automáticamente que el body tenga los campos correctos con los t
 #### Qué es
 
 Método para **reemplazar completamente** un recurso existente. Se envía el objeto entero con todos sus campos, no solo los que cambian.
-
-#### Para qué sirve
-
-- Actualizar todos los datos de un usuario: `PUT /users/42`
-- Reemplazar la información de un producto: `PUT /products/15`
 
 #### Características
 
@@ -360,20 +506,28 @@ Método para **reemplazar completamente** un recurso existente. Se envía el obj
 | Cuerpo (body)  | Sí — todos los campos del recurso |
 | Código típico  | `200 OK` |
 
-#### Cómo se usa en FastAPI
+#### Cómo lo implementa MoureDev
 
 ```python
-class User(BaseModel):
-    nombre: str
-    edad: int
-    email: str
-
-@app.put("/users/{user_id}")
-async def update_user(user_id: int, user: User):
-    return {"mensaje": f"Usuario {user_id} actualizado", "datos": user}
+@app.put("/user/")
+async def user(user: User):
+    found = False
+    for index, saved_user in enumerate(users_list):
+        if saved_user.id == user.id:
+            users_list[index] = user
+            found = True
+    if not found:
+        return {"error": "No se ha actualizado el usuario"}
+    return user
 ```
 
-El `user_id` viene por path param (identifica el recurso a modificar) y el body contiene los nuevos datos completos.
+**El ID va en el body, no en la ruta** — a diferencia de la convención REST (`PUT /user/{id}`), MoureDev recibe el objeto completo incluyendo el `id` como parte del body (`PUT /user/`). El ID se usa internamente para encontrar qué elemento reemplazar. Ambos enfoques son válidos; la convención REST con path param es más común en producción.
+
+**`enumerate(users_list)`** — devuelve pares `(índice, elemento)` para poder acceder a la posición y modificar la lista en ese lugar. Sin `enumerate` no tendrías el índice y no podrías hacer `users_list[index] = user`.
+
+**`users_list[index] = user`** — reemplaza el elemento en esa posición con el nuevo objeto `User`. Esto es un reemplazo completo: todos los campos del usuario quedan con los valores del body recibido.
+
+**`found = False` / `found = True`** — bandera para saber si el `for` encontró el usuario. El `if not found` después del `for` solo se ejecuta si ninguna iteración cumplió la condición.
 
 ---
 
@@ -383,32 +537,56 @@ El `user_id` viene por path param (identifica el recurso a modificar) y el body 
 
 Método para **eliminar un recurso** del servidor.
 
-#### Para qué sirve
-
-- Eliminar un usuario: `DELETE /users/42`
-- Cancelar un pedido: `DELETE /orders/8`
-
 #### Características
 
 | Característica | Valor |
 |----------------|-------|
 | Seguro         | No — elimina datos |
 | Idempotente    | Sí — eliminar algo que ya fue eliminado no cambia el estado |
-| Cuerpo (body)  | Generalmente no |
+| Cuerpo (body)  | No — el ID va en la ruta |
 | Código típico  | `200 OK` o `204 No Content` |
 
-#### Cómo se usa en FastAPI
+#### Cómo lo implementa MoureDev
 
 ```python
-@app.delete("/users/{user_id}", status_code=204)
-async def delete_user(user_id: int):
-    # 204: éxito sin contenido en la respuesta
-    return
+@app.delete("/user/{id}")
+async def user(id: int):
+    found = False
+    for index, saved_user in enumerate(users_list):
+        if saved_user.id == id:
+            del users_list[index]
+            found = True
+    if not found:
+        return {"error": "No se ha eliminado el usuario"}
 ```
+
+**`del users_list[index]`** — elimina el elemento en esa posición de la lista. A diferencia de `pop(index)` que devuelve el elemento eliminado, `del` solo lo borra. Para DELETE no necesitamos el elemento eliminado, así que `del` es suficiente.
+
+**Sin `return` en el caso exitoso** — cuando `found` es `True`, la función termina sin retornar nada explícitamente. FastAPI devuelve `200 OK` con body vacío. Para devolver `204 No Content` (más correcto semánticamente) se agrega `status_code=204` al decorador.
+
+**El ID va en la ruta** — a diferencia del PUT, aquí MoureDev sí usa path param (`/user/{id}`). El DELETE no tiene body, así que el identificador del recurso a eliminar necesariamente va en la URL.
 
 ---
 
-### 4.4 Resumen de métodos HTTP
+### 4.4 Patrón con bandera `found`
+
+Los tres métodos de modificación (POST, PUT, DELETE) usan alguna forma de verificar si el recurso existe antes de operar. MoureDev usa el patrón de bandera booleana en PUT y DELETE:
+
+```python
+found = False
+for index, saved_user in enumerate(users_list):
+    if saved_user.id == id:
+        # operación
+        found = True
+if not found:
+    return {"error": "..."}
+```
+
+Es un patrón claro para aprender. La alternativa con `HTTPException` es más correcta para una API real porque devuelve el código de estado adecuado (`404`) en lugar de un `200` con mensaje de error en el body.
+
+---
+
+### 4.5 Resumen de métodos HTTP
 
 | Método | Acción           | Body | Idempotente | Código típico |
 |--------|------------------|------|-------------|---------------|
@@ -419,7 +597,7 @@ async def delete_user(user_id: int):
 
 > **PATCH** (no siempre cubierto en cursos básicos): actualiza **parcialmente** un recurso. Solo se envían los campos que cambian. A diferencia de PUT, no requiere el objeto completo.
 
-Referencia: [MDN - HTTP Methods](https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods) · [FastAPI - Body](https://fastapi.tiangolo.com/tutorial/body/)
+Referencia: [MDN - HTTP Methods](https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods) · [FastAPI - Body](https://fastapi.tiangolo.com/tutorial/body/) · [FastAPI - Response Model](https://fastapi.tiangolo.com/tutorial/response-model/)
 
 ---
 
@@ -767,14 +945,13 @@ Es el patrón de referencia para organizar los endpoints de un recurso. Antes de
 
 ---
 
-### CRUD completo sobre `users_list` (lista en memoria)
+### El código de MoureDev: CRUD completo
 
-El siguiente ejemplo implementa el CRUD completo del recurso `User` usando la lista en memoria del ejemplo de MoureDev. Cada endpoint corresponde a una letra del acrónimo.
+Este es el archivo completo de MoureDev con todos los endpoints. Es la referencia base del curso:
 
 ```python
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from pydantic import BaseModel
-from typing import Optional
 
 app = FastAPI()
 
@@ -791,99 +968,167 @@ users_list = [
     User(id=3, name="Brais", surname="Dahlberg", url="https://haakon.com", age=33)
 ]
 
-
-# ---------------------------------------------------------------------------
-# READ — Leer todos los usuarios
-# ---------------------------------------------------------------------------
+# READ — todos
 @app.get("/users")
-async def get_users():
+async def users():
     return users_list
 
+# READ — por path param
+@app.get("/user/{id}")
+async def user(id: int):
+    return search_user(id)
 
-# ---------------------------------------------------------------------------
-# READ — Leer un usuario por ID (path param)
-# ---------------------------------------------------------------------------
-@app.get("/users/{user_id}")
-async def get_user(user_id: int):
-    user = next((u for u in users_list if u.id == user_id), None)
-    if user is None:
-        raise HTTPException(status_code=404, detail="Usuario no encontrado")
-    return user
+# READ — por query param
+@app.get("/user/")
+async def user(id: int):
+    return search_user(id)
 
-
-# ---------------------------------------------------------------------------
-# CREATE — Agregar un nuevo usuario
-# ---------------------------------------------------------------------------
-@app.post("/users", status_code=201)
-async def create_user(user: User):
-    # Verificar que el ID no exista ya
-    if any(u.id == user.id for u in users_list):
-        raise HTTPException(status_code=400, detail="Ya existe un usuario con ese ID")
+# CREATE
+@app.post("/user/", response_model=User)
+async def user(user: User):
+    if type(search_user(user.id)) == User:
+        return {"error": "El usuario ya existe"}
     users_list.append(user)
     return user
 
+# UPDATE
+@app.put("/user/")
+async def user(user: User):
+    found = False
+    for index, saved_user in enumerate(users_list):
+        if saved_user.id == user.id:
+            users_list[index] = user
+            found = True
+    if not found:
+        return {"error": "No se ha actualizado el usuario"}
+    return user
 
-# ---------------------------------------------------------------------------
-# UPDATE — Reemplazar un usuario completo (PUT)
-# ---------------------------------------------------------------------------
-@app.put("/users/{user_id}")
-async def update_user(user_id: int, updated_user: User):
-    for index, u in enumerate(users_list):
-        if u.id == user_id:
-            users_list[index] = updated_user
-            return updated_user
-    raise HTTPException(status_code=404, detail="Usuario no encontrado")
+# DELETE
+@app.delete("/user/{id}")
+async def user(id: int):
+    found = False
+    for index, saved_user in enumerate(users_list):
+        if saved_user.id == id:
+            del users_list[index]
+            found = True
+    if not found:
+        return {"error": "No se ha eliminado el usuario"}
 
-
-# ---------------------------------------------------------------------------
-# DELETE — Eliminar un usuario
-# ---------------------------------------------------------------------------
-@app.delete("/users/{user_id}", status_code=204)
-async def delete_user(user_id: int):
-    for index, u in enumerate(users_list):
-        if u.id == user_id:
-            users_list.pop(index)
-            return
-    raise HTTPException(status_code=404, detail="Usuario no encontrado")
+# Función auxiliar
+def search_user(id: int):
+    users = filter(lambda user: user.id == id, users_list)
+    try:
+        return list(users)[0]
+    except:
+        return {"error": "No se ha encontrado el usuario"}
 ```
 
 ---
 
 ### Desglose de cada operación
 
-#### R — Read (GET /users y GET /users/{user_id})
+#### R — Read
 
-Dos endpoints de lectura: uno devuelve toda la lista, el otro busca por ID usando `next()` con una expresión generadora. Si no encuentra el usuario devuelve `None` y se lanza un `404`.
+**`GET /users`** devuelve toda la lista directamente.
 
-```python
-user = next((u for u in users_list if u.id == user_id), None)
-```
-
-`next()` recorre el generador y devuelve el primer elemento que cumpla la condición, o `None` si ninguno cumple. Es la forma idiomática de buscar un elemento en una lista en Python.
-
-#### C — Create (POST /users)
-
-Recibe un objeto `User` en el body, verifica que el ID no exista ya (`any()`), y lo agrega a la lista. Si el ID ya existe devuelve `400 Bad Request`.
+**`GET /user/{id}` y `GET /user/`** delegan a `search_user`. La función usa `filter` + `lambda` para recorrer la lista y `try/except` para capturar el `IndexError` cuando no hay resultado:
 
 ```python
-if any(u.id == user.id for u in users_list):
-    raise HTTPException(status_code=400, detail="Ya existe un usuario con ese ID")
+def search_user(id: int):
+    users = filter(lambda user: user.id == id, users_list)
+    try:
+        return list(users)[0]
+    except:
+        return {"error": "No se ha encontrado el usuario"}
 ```
 
-#### U — Update (PUT /users/{user_id})
+El `except` devuelve un dict con código `200`. Es suficiente para aprender, pero en producción se usa `HTTPException(status_code=404)` para que el cliente reciba el código correcto.
 
-Recorre la lista con `enumerate()` para tener acceso al índice, y reemplaza el elemento en esa posición con el objeto actualizado. Si no existe devuelve `404`.
+---
+
+#### C — Create
 
 ```python
-for index, u in enumerate(users_list):
-    if u.id == user_id:
-        users_list[index] = updated_user
-        return updated_user
+@app.post("/user/", response_model=User)
+async def user(user: User):
+    if type(search_user(user.id)) == User:
+        return {"error": "El usuario ya existe"}
+    users_list.append(user)
+    return user
 ```
 
-#### D — Delete (DELETE /users/{user_id})
+**`type(search_user(user.id)) == User`** — llama a `search_user` y chequea si lo que devuelve es un objeto `User`. Si lo es, el usuario ya existe. Si devuelve el dict de error, la condición es `False` y se procede.
 
-Igual que el update: busca por índice y usa `pop(index)` para eliminar el elemento de la lista. Devuelve `204` (sin contenido en la respuesta).
+**`response_model=User`** — le indica a FastAPI que documente la respuesta exitosa con el schema de `User` en `/docs`. También filtra campos extra que no estén en el modelo antes de devolver la respuesta.
+
+Versión con `HTTPException` (más correcta para producción):
+
+```python
+@app.post("/user/", status_code=201)
+async def user(user: User):
+    if type(search_user(user.id)) == User:
+        raise HTTPException(status_code=400, detail="El usuario ya existe")
+    users_list.append(user)
+    return user
+```
+
+---
+
+#### U — Update
+
+```python
+@app.put("/user/")
+async def user(user: User):
+    found = False
+    for index, saved_user in enumerate(users_list):
+        if saved_user.id == user.id:
+            users_list[index] = user
+            found = True
+    if not found:
+        return {"error": "No se ha actualizado el usuario"}
+    return user
+```
+
+**El ID va en el body**, no en la ruta. MoureDev recibe el objeto `User` completo (incluyendo el `id`) y busca por ese campo internamente. La convención REST estándar sería `PUT /user/{id}` con el ID en la ruta, pero ambos enfoques son válidos.
+
+**`enumerate`** devuelve pares `(índice, elemento)`. Sin él no tendrías el índice y no podrías hacer `users_list[index] = user` para reemplazar en esa posición.
+
+**`found = False` / `found = True`** — bandera booleana. El `if not found` después del `for` solo se ejecuta si ninguna iteración encontró el usuario.
+
+---
+
+#### D — Delete
+
+```python
+@app.delete("/user/{id}")
+async def user(id: int):
+    found = False
+    for index, saved_user in enumerate(users_list):
+        if saved_user.id == id:
+            del users_list[index]
+            found = True
+    if not found:
+        return {"error": "No se ha eliminado el usuario"}
+```
+
+**`del users_list[index]`** elimina el elemento en esa posición. A diferencia de `pop(index)` que devuelve el elemento eliminado, `del` solo lo borra sin devolver nada — suficiente para DELETE donde no necesitás el elemento.
+
+**Sin `return` en el caso exitoso** — cuando `found` es `True` la función termina sin retornar nada. FastAPI devuelve `200 OK` con body vacío. Para `204 No Content` (semánticamente más correcto) se agrega `status_code=204` al decorador.
+
+---
+
+### Comparación: estilo MoureDev vs producción
+
+| Aspecto                  | Estilo MoureDev (curso)              | Producción                              |
+|--------------------------|--------------------------------------|-----------------------------------------|
+| Error "no encontrado"    | `return {"error": "..."}` con `200`  | `raise HTTPException(status_code=404)`  |
+| Error "ya existe"        | `return {"error": "..."}` con `200`  | `raise HTTPException(status_code=400)`  |
+| Verificar existencia     | `type(search_user(id)) == User`      | `any()` o `next()` con `None`           |
+| Buscar elemento          | `filter` + `lambda` + `try/except`   | `next((u for u in lista if ...), None)` |
+| Eliminar de lista        | `del lista[index]`                   | `lista.pop(index)`                      |
+| DELETE exitoso           | Sin `return`, código `200`           | `return` vacío con `status_code=204`    |
+
+El estilo del curso es más legible para aprender. La versión de producción usa los status codes correctos para que los clientes puedan manejar los errores apropiadamente.
 
 ---
 
