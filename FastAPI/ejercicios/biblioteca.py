@@ -17,6 +17,14 @@ Book(id= 3, title= "El señor de los anillos", author= "J.R.R. Tolkien", year= 1
 Book(id= 4, title= "Don Quijote de la Mancha", author= "Miguel de Cervantes", year= 1605, available= True)
 ]
 
+def search_book(id: int):
+    books= filter(lambda book: book.id == id, books_list)
+    try:
+        return list(books)[0]
+    except:
+        return {"error": "Libro no encontrado"}
+    
+   
 @app.get("/books", response_model=list[Book])
 async def books():
     return books_list
@@ -46,9 +54,14 @@ async def book_query(id: int):
 # El ?id= es el query param — el cliente envía el ID como parámetro nombrado
 # FastAPI lo detecta automáticamente porque "id" no está en la ruta entre llaves
 
-def search_book(id: int):
-    books= filter(lambda book: book.id == id, books_list)
-    try:
-        return list(books)[0]
-    except:
-        return {"error": "Libro no encontrado"}
+
+@app.post("/book", status_code=201)
+async def create_book(book: Book):
+    # any() recorre books_list y devuelve True si algún libro ya tiene ese id
+    # b es el nombre temporal de cada elemento en cada vuelta
+    if any(b.id == book.id for b in books_list):
+        return {"error": "Ya existe un libro con ese ID"}
+    # si no hay duplicado, agrega el libro a la lista
+    books_list.append(book)
+    # devuelve el libro creado con status code 201
+    return book

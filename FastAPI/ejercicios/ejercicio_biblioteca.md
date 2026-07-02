@@ -8,6 +8,11 @@ Trabajá en un solo archivo `biblioteca.py`.
 Iniciá el servidor con:
 
     uvicorn biblioteca:app --reload
+    uvicorn ejercicios.biblioteca:app --reload
+    
+    
+activar venv
+ ~/BACKEND/FastAPI/.venv/bin/activate
 
 Probá cada ejercicio en Thunder Client antes de avanzar al siguiente.
 
