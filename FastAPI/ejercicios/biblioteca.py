@@ -1,5 +1,6 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
+from typing import Optional
 
 app = FastAPI()
 
@@ -22,7 +23,8 @@ def search_book(id: int):
     try:
         return list(books)[0]
     except:
-        return {"error": "Libro no encontrado"}
+        raise HTTPException(status_code=404, detail="Libro no encontrado")
+
     
    
 @app.get("/books", response_model=list[Book])
@@ -55,13 +57,39 @@ async def book_query(id: int):
 # FastAPI lo detecta automáticamente porque "id" no está en la ruta entre llaves
 
 
-@app.post("/book", status_code=201)
+@app.get("/books/")
+async def books_by_available(available: Optional[bool] = None):
+    if available is None:
+        return books_list
+    return [b for b in books_list if b.available == available]
+
+# GET http://127.0.0.1:8000/books/               → todos
+# GET http://127.0.0.1:8000/books/?available=true  → solo disponibles
+# GET http://127.0.0.1:8000/books/?available=false → solo no disponibles
+
+@app.post("/book/", response_model=Book, status_code=201)
 async def create_book(book: Book):
     # any() recorre books_list y devuelve True si algún libro ya tiene ese id
     # b es el nombre temporal de cada elemento en cada vuelta
     if any(b.id == book.id for b in books_list):
-        return {"error": "Ya existe un libro con ese ID"}
+         raise HTTPException(status_code=400, detail="El libro ya existe")
     # si no hay duplicado, agrega el libro a la lista
     books_list.append(book)
     # devuelve el libro creado con status code 201
     return book
+
+@app.put("/book/")
+async def modificate_book(book: Book):
+    for index, modify_book in enumerate(books_list):
+        if modify_book.id == book.id:
+            books_list[index] = book
+            return book
+    raise HTTPException(status_code=404, detail="No se ha actualizado el libro")
+
+@app.delete("/book/{id}", status_code=204)
+async def delete_book(id: int):
+    for index, delete_book in enumerate(books_list):
+        if delete_book.id == id:
+            del books_list[index]
+            return 
+    raise HTTPException(status_code=404, detail="Libro no encontrado")

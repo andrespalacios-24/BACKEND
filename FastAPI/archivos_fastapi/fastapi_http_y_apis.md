@@ -656,20 +656,115 @@ Códigos numéricos de 3 dígitos que el servidor devuelve en cada respuesta par
 
 ### Cómo devolver códigos específicos en FastAPI
 
+#### `HTTPException` — lanzar errores HTTP
+
 ```python
 from fastapi import FastAPI, HTTPException
+```
+
+`HTTPException` es una clase de FastAPI que interrumpe la ejecución del endpoint inmediatamente y devuelve una respuesta de error con el código y mensaje indicados. Se lanza con `raise`, no se retorna con `return`.
+
+```python
+raise HTTPException(status_code=404, detail="Usuario no encontrado")
+```
+
+| Parámetro     | Para qué sirve                                      |
+|---------------|-----------------------------------------------------|
+| `status_code` | Código HTTP de la respuesta de error                |
+| `detail`      | Mensaje descriptivo que recibe el cliente en el body|
+
+La respuesta que recibe el cliente:
+```json
+{
+    "detail": "Usuario no encontrado"
+}
+```
+
+---
+
+### El ejemplo de MoureDev: HTTPException en el POST
+
+MoureDev introduce `HTTPException` en el endpoint POST para manejar el caso de usuario duplicado:
+
+```python
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
 
 app = FastAPI()
 
-@app.get("/users/{user_id}")
-async def get_user(user_id: int):
-    user = buscar_usuario(user_id)  # función hipotética
-    if user is None:
-        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+class User(BaseModel):
+    id: int
+    name: str
+    surname: str
+    url: str
+    age: int
+
+users_list = [
+    User(id=1, name="Brais", surname="Moure", url="https://moure.dev", age=35),
+    User(id=2, name="Moure", surname="Dev", url="https://mouredev.com", age=35),
+    User(id=3, name="Brais", surname="Dahlberg", url="https://haakon.com", age=33)
+]
+
+@app.post("/user/", response_model=User, status_code=201)
+async def user(user: User):
+    if type(search_user(user.id)) == User:
+        raise HTTPException(status_code=404, detail="El usuario ya existe")
+    users_list.append(user)
     return user
 ```
 
-`HTTPException` interrumpe la ejecución y devuelve la respuesta de error inmediatamente.
+**`raise HTTPException(status_code=404, detail="El usuario ya existe")`** — nota que MoureDev usa `404` para usuario duplicado. Técnicamente el código más correcto para "ya existe" sería `400` o `409 Conflict`, pero para el ejemplo didáctico el concepto importante es el uso de `HTTPException`, no el código específico.
+
+**`return` vs `raise`** — esta es la diferencia clave:
+
+| | Comportamiento |
+|---|---|
+| `return {"error": "..."}` | Devuelve `200 OK` con el dict en el body — el cliente recibe éxito aunque hubo error |
+| `raise HTTPException(...)` | Interrumpe la ejecución y devuelve el código correcto — el cliente recibe el error real |
+
+---
+
+### Dónde debería usarse `HTTPException` en el CRUD completo
+
+Aplicando `HTTPException` a todos los endpoints del ejemplo de MoureDev:
+
+```python
+# GET — recurso no encontrado
+def search_user(id: int):
+    users = filter(lambda user: user.id == id, users_list)
+    try:
+        return list(users)[0]
+    except:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+# POST — recurso duplicado
+@app.post("/user/", status_code=201)
+async def create_user(user: User):
+    if type(search_user(user.id)) == User:
+        raise HTTPException(status_code=400, detail="El usuario ya existe")
+    users_list.append(user)
+    return user
+
+# PUT — recurso no encontrado
+@app.put("/user/")
+async def update_user(user: User):
+    for index, saved_user in enumerate(users_list):
+        if saved_user.id == user.id:
+            users_list[index] = user
+            return user
+    raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+# DELETE — recurso no encontrado
+@app.delete("/user/{id}", status_code=204)
+async def delete_user(id: int):
+    for index, saved_user in enumerate(users_list):
+        if saved_user.id == id:
+            del users_list[index]
+            return
+    raise HTTPException(status_code=404, detail="Usuario no encontrado")
+```
+
+Con `HTTPException` desaparece el patrón de bandera `found` — si el `for` termina sin encontrar el recurso, el `raise` después del `for` se ejecuta automáticamente.
 
 Referencia: [FastAPI - HTTPException](https://fastapi.tiangolo.com/tutorial/handling-errors/) · [MDN - Status Codes](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status)
 
@@ -1150,6 +1245,195 @@ El estilo del curso es más legible para aprender. La versión de producción us
 Al reiniciar el servidor (`Ctrl+C` y `uvicorn ... --reload`), `users_list` vuelve a su estado inicial. Los cambios no persisten. Esto es esperado en esta etapa del aprendizaje. La persistencia real se agrega conectando una base de datos (SQLite, PostgreSQL) más adelante en el roadmap.
 
 Referencia: [FastAPI - Body](https://fastapi.tiangolo.com/tutorial/body/) · [FastAPI - HTTPException](https://fastapi.tiangolo.com/tutorial/handling-errors/) · [FastAPI - Path Parameters](https://fastapi.tiangolo.com/tutorial/path-params/)
+
+---
+
+## 9. Parámetros del decorador
+
+Los decoradores `@app.get(...)`, `@app.post(...)`, etc. aceptan varios parámetros que controlan el comportamiento del endpoint y lo que se muestra en `/docs`. El más visto hasta ahora es la ruta, pero hay varios más.
+
+```python
+@app.post("/user/", response_model=User, status_code=201)
+```
+
+---
+
+### 9.1 `response_model`
+
+#### Qué es
+
+Le dice a FastAPI qué estructura tiene la respuesta exitosa del endpoint.
+
+#### Para qué sirve
+
+Hace dos cosas simultáneamente:
+
+**Documenta** — en `/docs`, bajo ese endpoint, muestra el schema exacto con los campos y tipos que el cliente va a recibir. Sin `response_model` Swagger solo muestra "Successful Response" sin estructura.
+
+**Filtra** — antes de enviar la respuesta, Pydantic elimina cualquier campo que no esté en el modelo. Útil cuando el objeto interno tiene campos que no querés exponer al cliente (por ejemplo una contraseña hasheada).
+
+```python
+class UserInterno(BaseModel):
+    id: int
+    name: str
+    password: str       # campo interno, no debe salir
+
+class UserPublico(BaseModel):
+    id: int
+    name: str           # solo estos dos campos llegan al cliente
+
+@app.get("/users/{id}", response_model=UserPublico)
+async def get_user(id: int):
+    return UserInterno(id=1, name="Andrés", password="hash_secreto")
+    # FastAPI filtra "password" automáticamente antes de responder
+```
+
+#### Cuándo usarlo
+
+| Situación | Usar `response_model` |
+|-----------|----------------------|
+| Querés documentar la estructura en `/docs` | Sí |
+| Querés filtrar campos sensibles | Sí |
+| Endpoint simple de prueba o aprendizaje | Opcional |
+| Devolvés un tipo básico (`str`, `int`) | No es necesario |
+
+#### Tipos que acepta
+
+```python
+response_model=User              # un solo objeto
+response_model=list[User]        # lista de objetos
+response_model=Optional[User]    # puede devolver el objeto o None
+response_model=list[str]         # lista de strings
+```
+
+En el ejemplo de MoureDev:
+```python
+@app.post("/user/", response_model=User, status_code=201)
+```
+Documenta que la respuesta exitosa tiene la forma de `User` y filtra cualquier campo extra.
+
+Referencia: [FastAPI - Response Model](https://fastapi.tiangolo.com/tutorial/response-model/)
+
+---
+
+### 9.2 `status_code`
+
+#### Qué es
+
+Define el código HTTP que devuelve el endpoint cuando todo sale bien.
+
+#### Para qué sirve
+
+Sin `status_code`, FastAPI devuelve `200 OK` por defecto en todos los endpoints. Con `status_code` podés devolver el código semánticamente correcto para cada operación.
+
+```python
+@app.post("/user/", status_code=201)    # 201 Created
+@app.delete("/user/{id}", status_code=204)  # 204 No Content
+```
+
+#### Cuándo cambiarlo
+
+| Método | `status_code` recomendado | Por qué |
+|--------|--------------------------|---------|
+| GET    | `200` (default)          | Lectura exitosa |
+| POST   | `201`                    | Recurso creado |
+| PUT    | `200` (default)          | Recurso actualizado, devuelve el objeto |
+| DELETE | `204`                    | Eliminado sin contenido en la respuesta |
+
+Con `204` la función no debe devolver nada — `204 No Content` significa respuesta sin body:
+
+```python
+@app.delete("/user/{id}", status_code=204)
+async def delete_user(id: int):
+    del users_list[index]
+    return   # sin contenido
+```
+
+Referencia: [FastAPI - Response Status Code](https://fastapi.tiangolo.com/tutorial/response-status-code/)
+
+---
+
+### 9.3 `summary`, `description` y `tags`
+
+Controlan lo que se muestra en `/docs` para cada endpoint.
+
+```python
+@app.get(
+    "/users",
+    summary="Listar usuarios",
+    description="Devuelve todos los usuarios registrados en el sistema.",
+    tags=["usuarios"]
+)
+async def get_users():
+    return users_list
+```
+
+| Parámetro     | Qué muestra en `/docs`                              |
+|---------------|-----------------------------------------------------|
+| `summary`     | Título corto del endpoint                           |
+| `description` | Descripción larga visible al expandir               |
+| `tags`        | Agrupa endpoints bajo una categoría en el panel lateral |
+
+Sin estos parámetros FastAPI usa el nombre de la función como summary y sin tags todos los endpoints aparecen bajo "default".
+
+También podés usar el **docstring** de la función como descripción:
+
+```python
+@app.get("/users", tags=["usuarios"])
+async def get_users():
+    """Devuelve todos los usuarios registrados en el sistema."""
+    return users_list
+```
+
+Referencia: [FastAPI - Path Operation Configuration](https://fastapi.tiangolo.com/tutorial/path-operation-configuration/)
+
+---
+
+### 9.4 `responses`
+
+Documenta los posibles códigos de respuesta del endpoint, incluyendo los de error.
+
+```python
+@app.get(
+    "/users/{id}",
+    responses={
+        200: {"description": "Usuario encontrado"},
+        404: {"description": "Usuario no encontrado"}
+    }
+)
+async def get_user(id: int):
+    ...
+```
+
+En `/docs`, bajo la sección **Responses**, aparecen todos los códigos posibles con su descripción. Sin esto solo aparece el `200`.
+
+---
+
+### 9.5 Combinación completa
+
+```python
+@app.post(
+    "/user/",
+    response_model=User,
+    status_code=201,
+    summary="Crear usuario",
+    description="Crea un nuevo usuario. Devuelve 400 si el ID ya existe.",
+    tags=["usuarios"],
+    responses={
+        201: {"description": "Usuario creado exitosamente"},
+        400: {"description": "El usuario ya existe"}
+    }
+)
+async def create_user(user: User):
+    if type(search_user(user.id)) == User:
+        raise HTTPException(status_code=400, detail="El usuario ya existe")
+    users_list.append(user)
+    return user
+```
+
+En la práctica del curso solo se usan `response_model` y `status_code`. Los demás se agregan cuando la API va a ser consumida por otros equipos y la documentación importa.
+
+Referencia: [FastAPI - Path Operation Configuration](https://fastapi.tiangolo.com/tutorial/path-operation-configuration/) · [FastAPI - Additional Responses](https://fastapi.tiangolo.com/advanced/additional-responses/)
 
 ---
 
