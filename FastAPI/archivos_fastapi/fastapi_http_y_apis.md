@@ -782,56 +782,187 @@ A medida que una API crece, tener todos los endpoints en `main.py` se vuelve imp
 
 - Un archivo por recurso: `users.py`, `products.py`, `orders.py`
 - Cada archivo define sus propias rutas con `APIRouter`
-- `main.py` solo incluye los routers y configura la app
+- `main.py` solo incluye los routers y queda limpio
 
-### Cómo se usa en FastAPI
+---
 
-#### Archivo del router: `routers/users.py`
+### El ejemplo de MoureDev: tres archivos
+
+MoureDev divide la API en tres archivos: `main.py`, `products.py` y `users.py`, todos dentro de una carpeta `routers/`.
+
+```
+FastAPI/
+├── main.py
+└── routers/
+    ├── products.py
+    └── users.py
+```
+
+---
+
+#### `main.py` — punto de entrada
+
+```python
+from fastapi import FastAPI
+from routers import products, users
+
+app = FastAPI()
+
+app.include_router(products.router)
+app.include_router(users.router)
+
+@app.get("/")
+async def root():
+    return "Hola FastAPI!"
+
+@app.get("/url")
+async def url():
+    return {"url": "https://mouredev.com/python"}
+```
+
+**`from routers import products, users`** — importa los módulos `products.py` y `users.py` desde la carpeta `routers/`. Python trata la carpeta como un paquete.
+
+**`app.include_router(products.router)`** — registra todas las rutas definidas en `products.py` dentro de la aplicación principal. A partir de este momento FastAPI conoce esos endpoints y los sirve.
+
+`main.py` no tiene lógica de negocio — solo configura la app, incluye los routers y define las rutas globales (`/` y `/url`).
+
+---
+
+#### `routers/products.py` — router con `prefix` y `tags`
 
 ```python
 from fastapi import APIRouter
 
 router = APIRouter(
-    prefix="/users",       # todas las rutas empiezan con /users
-    tags=["usuarios"]      # agrupa en la documentación
+    prefix="/products",
+    tags=["products"],
+    responses={404: {"message": "No encontrado"}}
 )
 
+products_list = ["Producto 1", "Producto 2", "Producto 3", "Producto 4", "Producto 5"]
+
 @router.get("/")
-async def get_users():
-    return [{"id": 1, "nombre": "Andrés"}]
+async def products():
+    return products_list
 
-@router.get("/{user_id}")
-async def get_user(user_id: int):
-    return {"id": user_id}
-
-@router.post("/", status_code=201)
-async def create_user():
-    return {"mensaje": "usuario creado"}
-
-@router.delete("/{user_id}", status_code=204)
-async def delete_user(user_id: int):
-    return
+@router.get("/{id}")
+async def products(id: int):
+    return products_list[id]
 ```
 
-#### Archivo principal: `main.py`
+**`router = APIRouter(...)`** — crea una instancia del router. Es equivalente a `app = FastAPI()` pero para un recurso específico. Los decoradores de los endpoints usan `@router` en lugar de `@app`.
+
+**`prefix="/products"`** — prefijo que FastAPI agrega automáticamente a todas las rutas del router. `@router.get("/")` se convierte en `GET /products/` y `@router.get("/{id}")` se convierte en `GET /products/{id}`. No hace falta escribir `/products` en cada decorador.
+
+**`tags=["products"]`** — agrupa los endpoints bajo la categoría "products" en `/docs`. Todos los endpoints del router aparecen juntos en Swagger.
+
+**`responses={404: {"message": "No encontrado"}}`** — documenta en `/docs` que todos los endpoints de este router pueden devolver `404`. Se define una vez a nivel de router en lugar de repetirlo en cada endpoint.
+
+**`products_list[id]`** — accede directamente por índice a la lista. Ojo: los índices empiezan en `0`, entonces `products_list[1]` devuelve `"Producto 2"`, no `"Producto 1"`. Es un ejemplo simple, en producción se buscaría por ID real.
+
+---
+
+#### `routers/users.py` — router sin `prefix`
 
 ```python
-from fastapi import FastAPI
-from routers import users
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
 
-app = FastAPI()
+router = APIRouter()
 
-app.include_router(users.router)
+class User(BaseModel):
+    id: int
+    name: str
+    surname: str
+    url: str
+    age: int
+
+users_list = [
+    User(id=1, name="Brais", surname="Moure", url="https://moure.dev", age=35),
+    User(id=2, name="Moure", surname="Dev", url="https://mouredev.com", age=35),
+    User(id=3, name="Brais", surname="Dahlberg", url="https://haakon.com", age=33)
+]
+
+@router.get("/usersjson")
+async def usersjson():
+    return [...]
+
+@router.get("/users")
+async def users():
+    return users_list
+
+@router.get("/user/{id}")
+async def user(id: int):
+    return search_user(id)
+
+@router.get("/user/")
+async def user(id: int):
+    return search_user(id)
+
+@router.post("/user/", response_model=User, status_code=201)
+async def user(user: User):
+    if type(search_user(user.id)) == User:
+        raise HTTPException(status_code=404, detail="El usuario ya existe")
+    users_list.append(user)
+    return user
+
+@router.put("/user/")
+async def user(user: User):
+    found = False
+    for index, saved_user in enumerate(users_list):
+        if saved_user.id == user.id:
+            users_list[index] = user
+            found = True
+    if not found:
+        return {"error": "No se ha actualizado el usuario"}
+    return user
+
+@router.delete("/user/{id}")
+async def user(id: int):
+    found = False
+    for index, saved_user in enumerate(users_list):
+        if saved_user.id == id:
+            del users_list[index]
+            found = True
+    if not found:
+        return {"error": "No se ha eliminado el usuario"}
+
+def search_user(id: int):
+    users = filter(lambda user: user.id == id, users_list)
+    try:
+        return list(users)[0]
+    except:
+        return {"error": "No se ha encontrado el usuario"}
 ```
 
-Con `prefix="/users"` en el router, las rutas quedan:
+**`router = APIRouter()`** — sin parámetros. A diferencia de `products.py`, este router no tiene `prefix` ni `tags`. Las rutas se definen completas en cada decorador (`/users`, `/user/{id}`, etc.).
 
+**`@router.get` en lugar de `@app.get`** — el único cambio real respecto a tener todo en `main.py`. El modelo, la lista y la lógica son exactamente iguales.
+
+---
+
+### Diferencia entre router con y sin `prefix`
+
+| | `products.py` (con prefix) | `users.py` (sin prefix) |
+|---|---|---|
+| Definición | `router = APIRouter(prefix="/products")` | `router = APIRouter()` |
+| Decorador | `@router.get("/")` | `@router.get("/users")` |
+| Ruta final | `GET /products/` | `GET /users` |
+| Ventaja | No repetís el prefijo en cada ruta | Más control sobre cada ruta |
+
+Con `prefix` escribís menos — el prefijo se agrega solo. Sin `prefix` escribís la ruta completa en cada decorador pero tenés más flexibilidad si los endpoints del mismo recurso tienen rutas muy distintas.
+
+---
+
+### Cómo inicia el servidor con routers
+
+```bash
+uvicorn main:app --reload
 ```
-GET    /users/
-GET    /users/{user_id}
-POST   /users/
-DELETE /users/{user_id}
-```
+
+Siempre desde `main.py` — es el punto de entrada. FastAPI carga los routers automáticamente a través de `include_router`.
+
+---
 
 ### Múltiples routers
 
@@ -843,13 +974,15 @@ app.include_router(products.router)
 app.include_router(orders.router)
 ```
 
-Cada router es independiente. Podés darles prefijos y tags distintos.
+Cada router es independiente. Podés darles prefijos y tags distintos. El orden de `include_router` no afecta el funcionamiento, solo el orden en que aparecen en `/docs`.
+
+---
 
 ### En qué casos usar routers
 
 Desde el primer momento que tenés más de un recurso en la API. Es una buena práctica desde el inicio, no algo que se agrega después cuando el archivo ya está grande.
 
-Referencia: [FastAPI - Bigger Applications](https://fastapi.tiangolo.com/tutorial/bigger-applications/)
+Referencia: [FastAPI - Bigger Applications](https://fastapi.tiangolo.com/tutorial/bigger-applications/) · [FastAPI - APIRouter](https://fastapi.tiangolo.com/reference/apirouter/)
 
 ---
 

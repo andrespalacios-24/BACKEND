@@ -8,11 +8,6 @@ Trabajá en un solo archivo `biblioteca.py`.
 Iniciá el servidor con:
 
     uvicorn biblioteca:app --reload
-    uvicorn ejercicios.biblioteca:app --reload
-    
-    
-activar venv
- ~/BACKEND/FastAPI/.venv/bin/activate
 
 Probá cada ejercicio en Thunder Client antes de avanzar al siguiente.
 
@@ -101,7 +96,54 @@ Pruebas:
 
 ---
 
-## Flujo de prueba completo (Thunder Client)
+## Ejercicio 8 — Routers
+
+Reorganizá el código de `biblioteca.py` en la estructura de routers de MoureDev.
+
+### Estructura objetivo
+
+```
+FastAPI/
+└── ejercicios/
+    ├── biblioteca.py          (ya existe, no lo toques)
+    ├── main_biblioteca.py     (nuevo — punto de entrada)
+    └── routers/
+        └── books.py           (nuevo — router de libros)
+```
+
+### Qué hacer
+
+**1.** Creá la carpeta `routers/` dentro de `ejercicios/`.
+
+**2.** Creá `routers/books.py` con:
+- `router = APIRouter()` con `prefix`, `tags` y `responses` a nivel de router
+- El modelo `Book`, la lista `books_list` y la función `search_book` igual que en `biblioteca.py`
+- Todos los endpoints adaptados usando `@router` en lugar de `@app`
+
+**3.** Creá `ejercicios/main_biblioteca.py` con:
+- La instancia `app = FastAPI()`
+- La importación e inclusión del router de books
+- Un endpoint raíz `GET /` que devuelva `"API Biblioteca"`
+
+**4.** Iniciá el servidor siempre desde `FastAPI/`:
+
+    uvicorn ejercicios.main_biblioteca:app --reload
+
+**5.** Probá en Thunder Client que todos los endpoints siguen funcionando igual que antes.
+
+### A tener en cuenta antes de escribir
+
+Con `prefix="/book"` en el router, los decoradores ya no llevan el prefijo:
+
+    @router.get("/")        →  GET /book/
+    @router.get("/{id}")    →  GET /book/{id}
+    @router.post("/")       →  POST /book/
+    @router.put("/")        →  PUT /book/
+    @router.delete("/{id}") →  DELETE /book/{id}
+
+Pensá cómo quedan las rutas de `/books` y `/booksjson` con el prefijo aplicado antes de escribirlas.
+
+---
 
 Cuando termines todos los ejercicios, probá este flujo en orden:
 
