@@ -992,45 +992,121 @@ Referencia: [FastAPI - Bigger Applications](https://fastapi.tiangolo.com/tutoria
 
 #### Qué son
 
-Archivos que el servidor entrega tal cual están en disco: imágenes, CSS, JavaScript, PDFs, fuentes. No se procesan ni generan dinámicamente.
+Archivos que el servidor entrega tal cual están en disco: imágenes, CSS, JavaScript, PDFs, fuentes. No se procesan ni generan dinámicamente — el servidor los lee y los envía al cliente sin modificarlos.
 
 #### Para qué sirven
 
 En una API pura esto es menos común, pero es útil para servir imágenes de productos, archivos descargables, o una interfaz HTML simple junto a la API.
 
-#### Cómo se usa en FastAPI
+---
+
+### El ejemplo de MoureDev
 
 ```python
 from fastapi import FastAPI
+from routers import products, users
 from fastapi.staticfiles import StaticFiles
 
 app = FastAPI()
 
-# Monta la carpeta "static" bajo la ruta "/static"
+app.include_router(products.router)
+app.include_router(users.router)
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+@app.get("/")
+async def root():
+    return "Hola FastAPI!"
+
+@app.get("/url")
+async def url():
+    return {"url": "https://mouredev.com/python"}
+```
+
+---
+
+### Desglose línea por línea
+
+```python
+from fastapi.staticfiles import StaticFiles
+```
+
+`StaticFiles` es una clase de FastAPI que maneja la entrega de archivos estáticos. Se importa desde `fastapi.staticfiles`.
+
+---
+
+```python
 app.mount("/static", StaticFiles(directory="static"), name="static")
 ```
 
-Estructura de carpetas:
+`app.mount()` registra una ruta en la aplicación que no es un endpoint normal sino un **montaje** — un punto donde FastAPI delega todas las peticiones a otro manejador, en este caso `StaticFiles`.
+
+| Parámetro | Valor | Para qué sirve |
+|-----------|-------|----------------|
+| `"/static"` | Ruta de acceso | URL base desde donde se accede a los archivos |
+| `StaticFiles(directory="static")` | Manejador | Indica qué carpeta del disco servir |
+| `name="static"` | Nombre interno | Identificador para generar URLs internamente |
+
+**`directory="static"`** — nombre de la carpeta en el disco relativa al punto desde donde se ejecuta uvicorn. Si corrés uvicorn desde `~/BACKEND/FastAPI/`, la carpeta `static/` debe estar en `~/BACKEND/FastAPI/static/`.
+
+---
+
+### Estructura de carpetas necesaria
+
 ```
 FastAPI/
 ├── main.py
 └── static/
     ├── imagen.png
-    └── documento.pdf
+    ├── documento.pdf
+    └── styles.css
 ```
 
-Acceso desde el navegador o cliente HTTP:
+Acceso desde el navegador o Postman:
+
 ```
 GET http://127.0.0.1:8000/static/imagen.png
 GET http://127.0.0.1:8000/static/documento.pdf
+GET http://127.0.0.1:8000/static/styles.css
 ```
 
-Requiere instalar `aiofiles`:
+FastAPI construye la ruta final sumando la ruta de montaje (`/static`) más el nombre del archivo.
+
+---
+
+### Diferencia entre `mount` y un endpoint normal
+
+| | Endpoint normal | `app.mount` |
+|---|---|---|
+| Se define con | `@app.get(...)` | `app.mount(...)` |
+| Devuelve | Lo que retorna la función | El archivo tal cual está en disco |
+| Procesa lógica | Sí | No — entrega directa |
+| Aparece en `/docs` | Sí | No |
+
+Los archivos estáticos no aparecen en Swagger porque no son endpoints — son archivos servidos directamente sin pasar por lógica de Python.
+
+---
+
+### Instalación requerida
+
 ```bash
 pip install aiofiles
 ```
 
-Referencia: [FastAPI - Static Files](https://fastapi.tiangolo.com/tutorial/static-files/)
+`aiofiles` permite leer archivos de forma asíncrona. Sin él FastAPI lanza un error al intentar servir archivos estáticos.
+
+---
+
+### En qué casos usar recursos estáticos en una API
+
+- Imágenes de productos o usuarios
+- Archivos PDF descargables
+- Una interfaz HTML mínima para probar la API
+- Assets de un frontend servido junto a la API
+
+En producción con un frontend separado (React, Vue) los archivos estáticos generalmente los sirve un servidor dedicado (Nginx, CDN) y no FastAPI directamente. Pero en proyectos pequeños o durante el desarrollo es completamente válido.
+
+Referencia: [FastAPI - Static Files](https://fastapi.tiangolo.com/tutorial/static-files/) · [Starlette - StaticFiles](https://www.starlette.io/staticfiles/)
 
 ---
 
@@ -1040,11 +1116,30 @@ Referencia: [FastAPI - Static Files](https://fastapi.tiangolo.com/tutorial/stati
 
 Pequeños fragmentos de datos que el servidor envía al cliente y el cliente almacena y reenvía automáticamente en cada petición siguiente al mismo dominio.
 
+HTTP es un protocolo **stateless** (sin estado) — cada petición es independiente y el servidor no recuerda las anteriores. Las cookies son el mecanismo que permite mantener estado entre peticiones sin que el cliente tenga que enviar sus credenciales cada vez.
+
 #### Para qué sirven
 
-- Mantener sesiones de usuario sin enviar credenciales en cada petición.
-- Guardar preferencias del cliente (idioma, tema).
-- Rastreo de estado entre peticiones (HTTP es stateless por naturaleza).
+- Mantener sesiones de usuario activas (login)
+- Guardar preferencias del cliente (idioma, tema, carrito de compras)
+- Rastreo de actividad entre peticiones
+
+---
+
+#### Flujo completo de una cookie de sesión
+
+```
+1. Cliente → POST /login  (envía usuario y contraseña)
+2. Servidor verifica credenciales → genera session_id
+3. Servidor → respuesta con Set-Cookie: session_id=abc123
+4. Cliente almacena la cookie automáticamente
+5. Cliente → GET /perfil  (el navegador adjunta la cookie automáticamente)
+6. Servidor lee la cookie → identifica al usuario → devuelve su perfil
+```
+
+El cliente no necesita reenviar usuario y contraseña en cada petición — la cookie actúa como prueba de identidad temporal.
+
+---
 
 #### Cómo leer cookies en FastAPI
 
@@ -1061,6 +1156,12 @@ async def get_perfil(session_id: Optional[str] = Cookie(default=None)):
     return {"session_id": session_id}
 ```
 
+**`Cookie(default=None)`** — le dice a FastAPI que `session_id` viene de las cookies de la petición, no del body ni de la URL. El `default=None` la hace opcional — si el cliente no envía la cookie, el valor es `None`.
+
+FastAPI lee automáticamente el header `Cookie` de la petición y extrae el valor con el nombre que declaraste (`session_id`).
+
+---
+
 #### Cómo escribir cookies en la respuesta
 
 ```python
@@ -1071,24 +1172,66 @@ app = FastAPI()
 
 @app.post("/login")
 async def login():
+    # En producción aquí verificarías usuario y contraseña
     response = JSONResponse(content={"mensaje": "sesión iniciada"})
     response.set_cookie(
         key="session_id",
         value="abc123",
-        httponly=True,    # no accesible desde JavaScript del navegador
-        max_age=3600      # expira en 1 hora (segundos)
+        httponly=True,
+        max_age=3600,
+        samesite="lax"
     )
     return response
 ```
 
-| Parámetro  | Para qué sirve                                             |
-|------------|------------------------------------------------------------|
-| `httponly` | Protege contra XSS — JS no puede leer la cookie           |
-| `secure`   | Solo se envía por HTTPS                                    |
-| `max_age`  | Segundos hasta que expira                                  |
-| `samesite` | Protege contra CSRF (`"lax"`, `"strict"`, `"none"`)       |
+**`JSONResponse`** — en lugar de devolver directamente un dict, creás un objeto de respuesta para poder manipularlo antes de enviarlo. Esto permite agregar cookies, headers personalizados, etc.
 
-Referencia: [FastAPI - Cookie Parameters](https://fastapi.tiangolo.com/tutorial/cookie-params/) · [MDN - Cookies](https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies)
+**`set_cookie()`** — agrega la cookie al header `Set-Cookie` de la respuesta. El navegador la recibe y la almacena automáticamente.
+
+---
+
+#### Parámetros de `set_cookie`
+
+| Parámetro   | Para qué sirve                                              | Valor recomendado |
+|-------------|-------------------------------------------------------------|-------------------|
+| `key`       | Nombre de la cookie                                         | `"session_id"`    |
+| `value`     | Valor de la cookie                                          | Token generado    |
+| `httponly`  | JS del navegador no puede leer la cookie — protege contra XSS | `True`        |
+| `secure`    | Solo se envía por HTTPS — protege en tránsito               | `True` en producción |
+| `max_age`   | Segundos hasta que expira                                   | `3600` (1 hora)   |
+| `samesite`  | Protege contra CSRF                                         | `"lax"`           |
+
+**`samesite` explicado:**
+- `"strict"` — la cookie solo se envía si la petición viene del mismo dominio. Máxima protección pero puede romper flujos de redirección.
+- `"lax"` — permite enviar la cookie en navegación normal pero no en peticiones cross-site. Balance entre seguridad y usabilidad. Es el valor recomendado.
+- `"none"` — sin restricción. Requiere `secure=True`.
+
+---
+
+#### Cómo eliminar una cookie
+
+```python
+@app.post("/logout")
+async def logout():
+    response = JSONResponse(content={"mensaje": "sesión cerrada"})
+    response.delete_cookie(key="session_id")
+    return response
+```
+
+`delete_cookie()` le dice al navegador que elimine esa cookie. Internamente le pone una fecha de expiración en el pasado.
+
+---
+
+#### Cómo probar cookies en Postman
+
+En Postman, la pestaña **Cookies** (arriba a la derecha) muestra las cookies que el servidor devuelve. Para enviar una cookie manualmente:
+
+1. Pestaña **Headers** de la petición
+2. Agregás el header: `Cookie` → `session_id=abc123`
+
+O usás el gestor de cookies de Postman que las almacena automáticamente entre peticiones.
+
+Referencia: [FastAPI - Cookie Parameters](https://fastapi.tiangolo.com/tutorial/cookie-params/) · [MDN - Cookies](https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies) · [MDN - Set-Cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie)
 
 ---
 
@@ -1098,12 +1241,31 @@ Referencia: [FastAPI - Cookie Parameters](https://fastapi.tiangolo.com/tutorial/
 
 Metadatos que viajan junto a cada petición o respuesta HTTP, fuera del cuerpo. Son pares clave-valor que transmiten información sobre la petición, la respuesta o el cliente.
 
-#### Para qué sirven
+Toda petición HTTP tiene headers — aunque no los definas explícitamente, el cliente y el servidor agregan los básicos automáticamente (`Content-Type`, `Accept`, `Host`, etc.).
 
-- Indicar el tipo de contenido: `Content-Type: application/json`
-- Autenticación: `Authorization: Bearer <token>`
-- Control de caché, CORS, idioma preferido, y mucho más.
-- Enviar metadatos propios de la aplicación entre cliente y servidor.
+---
+
+#### Dirección de los headers
+
+| Dirección | Quién los envía | Para qué |
+|-----------|----------------|----------|
+| Request headers | El cliente | Informar al servidor sobre la petición |
+| Response headers | El servidor | Informar al cliente sobre la respuesta |
+
+---
+
+#### Headers más comunes en APIs REST
+
+| Header | Dirección | Para qué sirve | Ejemplo |
+|--------|-----------|----------------|---------|
+| `Content-Type` | Request / Response | Tipo de dato del body | `application/json` |
+| `Authorization` | Request | Token de autenticación | `Bearer eyJhbGci...` |
+| `Accept` | Request | Formato que acepta el cliente | `application/json` |
+| `Cache-Control` | Response | Instrucciones de caché | `no-cache`, `max-age=3600` |
+| `User-Agent` | Request | Identifica el cliente | `Mozilla/5.0...` |
+| `X-Request-ID` | Request / Response | ID para rastrear peticiones en logs | `abc-123-def` |
+
+---
 
 #### Cómo leer headers de la petición en FastAPI
 
@@ -1118,7 +1280,25 @@ async def get_info(user_agent: Optional[str] = Header(default=None)):
     return {"user_agent": user_agent}
 ```
 
-FastAPI convierte automáticamente los guiones de los headers a guiones bajos: `user-agent` → `user_agent`.
+**`Header(default=None)`** — le dice a FastAPI que el parámetro viene de los headers de la petición. FastAPI convierte automáticamente guiones a guiones bajos: `user-agent` → `user_agent`.
+
+Para leer múltiples headers:
+
+```python
+@app.get("/info")
+async def get_info(
+    user_agent: Optional[str] = Header(default=None),
+    accept_language: Optional[str] = Header(default=None),
+    authorization: Optional[str] = Header(default=None)
+):
+    return {
+        "user_agent": user_agent,
+        "language": accept_language,
+        "auth": authorization
+    }
+```
+
+---
 
 #### Cómo agregar headers a la respuesta
 
@@ -1136,19 +1316,69 @@ async def get_datos():
     return response
 ```
 
-#### Headers más comunes en APIs
+Igual que con las cookies, usás `JSONResponse` para manipular la respuesta antes de enviarla. Los headers se agregan como un diccionario.
 
-| Header                | Dirección          | Para qué sirve                                      |
-|-----------------------|--------------------|-----------------------------------------------------|
-| `Content-Type`        | Request / Response | Tipo de dato del body (`application/json`)          |
-| `Authorization`       | Request            | Token de autenticación (`Bearer <token>`)           |
-| `Accept`              | Request            | Formato que acepta el cliente                       |
-| `Cache-Control`       | Response           | Instrucciones de caché                              |
-| `X-Request-ID`        | Request / Response | ID para rastrear peticiones en logs                 |
+---
 
-La convención `X-` indica headers personalizados (no estándar). Aunque fue deprecada formalmente por la RFC 6648, sigue siendo muy usada en la práctica.
+#### Headers de autenticación — el más importante en APIs
 
-Referencia: [FastAPI - Header Parameters](https://fastapi.tiangolo.com/tutorial/header-params/) · [MDN - HTTP Headers](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers)
+El header `Authorization` es el estándar para proteger endpoints. El esquema más usado es **Bearer token**:
+
+```
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+En FastAPI se lee así:
+
+```python
+@app.get("/protected")
+async def protected(authorization: Optional[str] = Header(default=None)):
+    if authorization is None:
+        raise HTTPException(status_code=401, detail="No autorizado")
+    # verificar el token
+    return {"mensaje": "acceso permitido"}
+```
+
+Esto lo vas a ver en detalle en el tema de **Autorización** que viene más adelante en el curso.
+
+---
+
+#### Diferencia entre headers, cookies y query params para autenticación
+
+| Mecanismo | Cómo viaja | Uso típico |
+|-----------|-----------|------------|
+| Header `Authorization` | En el header de cada petición | APIs REST — el más común |
+| Cookie | Automático en el navegador | Aplicaciones web con sesiones |
+| Query param `?token=...` | En la URL | Desaconsejado — queda en logs |
+
+---
+
+#### La convención `X-`
+
+Los headers que empiezan con `X-` son personalizados (no estándar):
+
+```
+X-Request-ID: abc-123
+X-API-Version: 2.0
+X-RateLimit-Remaining: 99
+```
+
+Aunque fue deprecada formalmente por la RFC 6648, sigue siendo muy usada en la práctica para headers propios de la aplicación.
+
+---
+
+#### Cómo ver headers en Postman
+
+En la respuesta de cualquier petición, la pestaña **Headers** muestra todos los headers que devolvió el servidor. FastAPI siempre incluye al menos:
+
+```
+content-type: application/json
+content-length: 42
+```
+
+Para enviar headers en una petición, usás la pestaña **Headers** antes de hacer Send — agregás la clave y el valor.
+
+Referencia: [FastAPI - Header Parameters](https://fastapi.tiangolo.com/tutorial/header-params/) · [MDN - HTTP Headers](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers) · [MDN - Authorization](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Authorization)
 
 ---
 

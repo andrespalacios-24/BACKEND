@@ -159,3 +159,65 @@ Cuando termines todos los ejercicios, probá este flujo en orden:
     10. GET  /books/?available=true → filtrar disponibles
     11. DELETE /book/5             → eliminar
     12. GET  /book/5               → debe devolver 404
+
+---
+
+## Ejercicio 9 — Recursos estáticos, Cookies y Headers
+
+Agregá estas funcionalidades al proyecto con routers (`main_biblioteca.py`).
+
+### Parte A — Recursos estáticos
+
+**1.** Creá la carpeta `static/` dentro de `FastAPI/`.
+
+**2.** Ponele adentro cualquier archivo — una imagen, un PDF, un `.txt`.
+
+**3.** En `main_biblioteca.py` montá los archivos estáticos:
+
+```python
+from fastapi.staticfiles import StaticFiles
+app.mount("/static", StaticFiles(directory="static"), name="static")
+```
+
+**4.** Instalá `aiofiles` si no lo tenés:
+
+    pip install aiofiles
+
+**5.** Probá en el navegador o Postman:
+
+    GET http://127.0.0.1:8000/static/nombre_del_archivo
+
+---
+
+### Parte B — Cookies
+
+En `main_biblioteca.py` creá tres endpoints:
+
+**`POST /login`** — que devuelva una cookie llamada `biblioteca_session` con cualquier valor,
+`httponly=True` y `max_age=3600`.
+
+**`GET /perfil`** — que lea la cookie `biblioteca_session`. Si existe devolvé su valor,
+si no existe devolvé `HTTPException` código `401`.
+
+**`POST /logout`** — que elimine la cookie `biblioteca_session`.
+
+Probá el flujo en Postman:
+
+    1. POST /login   → recibís la cookie
+    2. GET /perfil   → leés la cookie (enviarla en Headers si Postman no la guarda)
+    3. POST /logout  → eliminás la cookie
+    4. GET /perfil   → debe devolver 401
+
+---
+
+### Parte C — Headers
+
+Creá un endpoint **`GET /headers`** en `main_biblioteca.py` que:
+- Lea el header `user-agent` de la petición
+- Lea un header personalizado `x-api-key` de la petición
+- Devuelva ambos valores en el body
+- Agregue un header `X-Biblioteca-Version: 1.0` a la respuesta
+
+Probalo en Postman agregando en la pestaña **Headers**:
+
+    x-api-key: mi-clave-secreta
