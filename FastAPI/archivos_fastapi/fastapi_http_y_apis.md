@@ -1110,6 +1110,98 @@ Referencia: [FastAPI - Static Files](https://fastapi.tiangolo.com/tutorial/stati
 
 ---
 
+### 7.1.1 URLs — endpoint vs redirección
+
+#### Qué son
+
+Cuando querés exponer una URL externa desde tu API tenés dos opciones: devolverla como dato para que el cliente decida qué hacer, o redirigir al cliente directamente a esa URL.
+
+---
+
+#### Opción A — Devolver la URL como dato (endpoint normal)
+
+```python
+@app.get("/recurso")
+async def recurso():
+    return {"url": "https://ejemplo.com/algo"}
+```
+
+**Para qué sirve** — el cliente recibe la URL en el body JSON y decide qué hacer con ella: mostrarla, abrirla, guardarla. El cliente tiene control.
+
+**En qué momento se usa:**
+- Cuando el frontend necesita construir un enlace dinámico
+- Cuando devolvés múltiples URLs para que el cliente elija
+- Cuando la URL va junto a otros datos que vos definís en el código o sacás de la BD:
+
+```python
+@app.get("/recurso")
+async def recurso():
+    return {
+        "url": "https://ejemplo.com/algo",
+        "nombre": "Recurso importante",   # vos lo definís
+        "tipo": "pdf"                      # vos lo definís
+    }
+```
+
+---
+
+#### Opción B — Redirección directa (`RedirectResponse`)
+
+```python
+from fastapi.responses import RedirectResponse
+
+@app.get("/recurso")
+async def recurso():
+    return RedirectResponse(url="https://ejemplo.com/algo")
+```
+
+**Para qué sirve** — el servidor le dice al cliente "andá a esta URL" y el navegador va automáticamente sin que el usuario haga nada. El cliente no recibe JSON — recibe un código `307 Temporary Redirect` con la URL de destino en el header `Location`.
+
+**En qué momento se usa:**
+- Links de descarga que apuntan a otra ubicación
+- Después de un login exitoso para redirigir al dashboard
+- URLs cortas que redirigen a URLs largas (acortadores de URL)
+- Cuando una ruta cambió y querés mantener compatibilidad con la URL anterior
+
+```python
+# URL corta que redirige a la documentación completa
+@app.get("/docs-externa")
+async def docs_externa():
+    return RedirectResponse(url="https://fastapi.tiangolo.com/tutorial/")
+
+# Después de login exitoso
+@app.post("/login")
+async def login():
+    # verificar credenciales...
+    return RedirectResponse(url="/dashboard", status_code=303)
+```
+
+---
+
+#### Códigos de redirección
+
+| Código | Nombre | Cuándo usarlo |
+|--------|--------|---------------|
+| `301` | Moved Permanently | La URL cambió para siempre |
+| `302` | Found | Redirección temporal (default en algunos casos) |
+| `303` | See Other | Después de un POST exitoso — redirigir a GET |
+| `307` | Temporary Redirect | Redirección temporal manteniendo el método HTTP (default de FastAPI) |
+
+---
+
+#### Comparación directa
+
+| Aspecto | Endpoint normal | `RedirectResponse` |
+|---------|----------------|-------------------|
+| Qué recibe el cliente | JSON con la URL | Código 3xx + header `Location` |
+| El navegador va automáticamente | No | Sí |
+| El cliente tiene control | Sí | No |
+| Uso típico | Frontend que construye links | Redirecciones transparentes |
+
+Referencia: [FastAPI - Response](https://fastapi.tiangolo.com/advanced/response-directly/) · [MDN - Redirections](https://developer.mozilla.org/en-US/docs/Web/HTTP/Redirections)
+
+---
+
 ### 7.2 Cookies
 
 #### Qué son
@@ -1149,16 +1241,19 @@ from typing import Optional
 
 app = FastAPI()
 
+# PERFIL — lee la cookie
 @app.get("/perfil")
-async def get_perfil(session_id: Optional[str] = Cookie(default=None)):
-    if session_id is None:
-        return {"mensaje": "no hay sesión activa"}
-    return {"session_id": session_id}
+async def get_perfil(biblioteca_session: Optional[str] = Cookie(default=None)):
+    #                 ^^^^^^^^^^^^^^^^^^                          ^^^^^^^^^^^^^^^^
+    #                 nombre igual al key del set_cookie          le dice a FastAPI que viene de las cookies
+    if biblioteca_session is None:
+        raise HTTPException(status_code=401, detail="No autorizado")
+    return {"session": biblioteca_session}
 ```
 
-**`Cookie(default=None)`** — le dice a FastAPI que `session_id` viene de las cookies de la petición, no del body ni de la URL. El `default=None` la hace opcional — si el cliente no envía la cookie, el valor es `None`.
+**`Cookie(default=None)`** — le dice a FastAPI que el parámetro viene de las cookies de la petición, no del body ni de la URL. El `default=None` la hace opcional — si el cliente no envía la cookie, el valor es `None`.
 
-FastAPI lee automáticamente el header `Cookie` de la petición y extrae el valor con el nombre que declaraste (`session_id`).
+FastAPI lee automáticamente el header `Cookie` de la petición y extrae el valor con el nombre que declaraste.
 
 ---
 
@@ -1170,16 +1265,18 @@ from fastapi.responses import JSONResponse
 
 app = FastAPI()
 
+# LOGIN — crea y entrega la cookie
 @app.post("/login")
 async def login():
     # En producción aquí verificarías usuario y contraseña
     response = JSONResponse(content={"mensaje": "sesión iniciada"})
     response.set_cookie(
-        key="session_id",
-        value="abc123",
-        httponly=True,
-        max_age=3600,
-        samesite="lax"
+        key="biblioteca_session",    # nombre de la cookie — vos lo definís
+        value="ABC123",              # valor del carnet — en producción sería un token generado
+        httponly=True,               # JS del navegador no puede leerla
+        max_age=3600,                # expira en 1 hora (segundos)
+        samesite="lax"               # protección contra CSRF
+        # secure=True               # agregar en producción cuando hay HTTPS
     )
     return response
 ```
@@ -1211,14 +1308,58 @@ async def login():
 #### Cómo eliminar una cookie
 
 ```python
+# LOGOUT — destruye la cookie
 @app.post("/logout")
 async def logout():
     response = JSONResponse(content={"mensaje": "sesión cerrada"})
-    response.delete_cookie(key="session_id")
+    response.delete_cookie(
+        key="biblioteca_session"    # mismo nombre que en set_cookie
+    )
     return response
 ```
 
-`delete_cookie()` le dice al navegador que elimine esa cookie. Internamente le pone una fecha de expiración en el pasado.
+`delete_cookie()` le dice al navegador que elimine esa cookie. El nombre debe coincidir exactamente con el `key` que usaste en `set_cookie`.
+
+---
+
+#### Los tres endpoints juntos — el flujo completo
+
+```python
+from fastapi import FastAPI, Cookie, HTTPException
+from fastapi.responses import JSONResponse
+from typing import Optional
+
+app = FastAPI()
+
+# 1. LOGIN — genera y entrega el carnet
+@app.post("/login")
+async def login():
+    response = JSONResponse(content={"mensaje": "sesión iniciada"})
+    response.set_cookie(
+        key="biblioteca_session",    # nombre de la cookie
+        value="ABC123",              # en producción: token generado automáticamente
+        httponly=True,               # JS no puede leerla
+        max_age=3600,                # expira en 1 hora
+        samesite="lax"               # protección CSRF
+    )
+    return response
+
+# 2. PERFIL — verifica el carnet
+@app.get("/perfil")
+async def perfil(biblioteca_session: Optional[str] = Cookie(default=None)):
+    #             ^^^^^^^^^^^^^^^^^^                          ^^^^^^^^^^^^^^^^
+    #             mismo nombre que el key                     indica que viene de cookies
+    if biblioteca_session is None:
+        raise HTTPException(status_code=401, detail="No autorizado")
+    return {"session": biblioteca_session}
+
+# 3. LOGOUT — destruye el carnet
+@app.post("/logout")
+async def logout():
+    response = JSONResponse(content={"mensaje": "sesión cerrada"})
+    response.delete_cookie(key="biblioteca_session")  # mismo nombre siempre
+    return response
+```
 
 ---
 

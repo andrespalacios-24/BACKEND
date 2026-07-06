@@ -178,7 +178,11 @@ Agregá estas funcionalidades al proyecto con routers (`main_biblioteca.py`).
 from fastapi.staticfiles import StaticFiles
 app.mount("/static", StaticFiles(directory="static"), name="static")
 ```
-
+-----------------------------------------------------------------------------------
+app.mount("/archivos", StaticFiles(directory="mis_archivos"), name="archivos")
+#          ^^^^^^^^^^                   ^^^^^^^^^^^^^                ^^^^^^^^
+#          URL de acceso               carpeta en disco            nombre interno
+------------------------------------------------------------------------------------
 **4.** Instalá `aiofiles` si no lo tenés:
 
     pip install aiofiles
