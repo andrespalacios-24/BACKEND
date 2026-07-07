@@ -1519,6 +1519,59 @@ content-length: 42
 
 Para enviar headers en una petición, usás la pestaña **Headers** antes de hacer Send — agregás la clave y el valor.
 
+---
+
+#### Los tres momentos juntos — sintaxis completa con comentarios
+
+```python
+from fastapi import FastAPI, Header, HTTPException
+from fastapi.responses import JSONResponse
+from typing import Optional
+
+app = FastAPI()
+
+# LEER headers que llegan en la petición
+@app.get("/headers")
+async def headers(
+    user_agent: Optional[str] = Header(default=None),
+    #^^^^^^^^^^ guión bajo porque Python no acepta guiones
+    #           FastAPI convierte user-agent → user_agent automáticamente
+
+    x_api_key: Optional[str] = Header(default=None)
+    #^^^^^^^^^  en Postman se envía como: x-api-key: mi-clave
+    #           FastAPI convierte x-api-key → x_api_key automáticamente
+):
+    return {
+        "user_agent": user_agent,    # devuelve lo que llegó en el header
+        "api_key": x_api_key         # devuelve lo que llegó en el header
+    }
+
+
+# ESCRIBIR headers en la respuesta
+@app.get("/version")
+async def version():
+    response = JSONResponse(content={"mensaje": "ok"})
+    response.headers["X-Biblioteca-Version"] = "1.0"
+    #                 ^^^^^^^^^^^^^^^^^^^^^^    ^^^^^
+    #                 nombre del header         valor — vos lo definís
+    return response
+
+
+# LEER y ESCRIBIR en el mismo endpoint
+@app.get("/info")
+async def info(
+    user_agent: Optional[str] = Header(default=None),   # lee user-agent
+    x_api_key: Optional[str] = Header(default=None)     # lee x-api-key
+):
+    response = JSONResponse(content={
+        "user_agent": user_agent,    # devuelve lo que llegó
+        "api_key": x_api_key         # devuelve lo que llegó
+    })
+    response.headers["X-Biblioteca-Version"] = "1.0"    # agrega header a la respuesta
+    return response
+    # en Postman → pestaña Headers de la respuesta → aparece X-Biblioteca-Version: 1.0
+```
+
 Referencia: [FastAPI - Header Parameters](https://fastapi.tiangolo.com/tutorial/header-params/) · [MDN - HTTP Headers](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers) · [MDN - Authorization](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Authorization)
 
 ---
