@@ -1,12 +1,13 @@
 from fastapi import FastAPI, Cookie, HTTPException, Header
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
-from ejercicios.routers import books
+from ejercicios.routers import books, auth_users
 from typing import Optional
 
 
-app= FastAPI()
+app = FastAPI()
 app.include_router(books.router)
+app.include_router(auth_users.router)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.get("/")

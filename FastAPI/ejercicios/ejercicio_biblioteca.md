@@ -178,11 +178,7 @@ Agregá estas funcionalidades al proyecto con routers (`main_biblioteca.py`).
 from fastapi.staticfiles import StaticFiles
 app.mount("/static", StaticFiles(directory="static"), name="static")
 ```
------------------------------------------------------------------------------------
-app.mount("/archivos", StaticFiles(directory="mis_archivos"), name="archivos")
-#          ^^^^^^^^^^                   ^^^^^^^^^^^^^                ^^^^^^^^
-#          URL de acceso               carpeta en disco            nombre interno
-------------------------------------------------------------------------------------
+
 **4.** Instalá `aiofiles` si no lo tenés:
 
     pip install aiofiles
@@ -225,3 +221,66 @@ Creá un endpoint **`GET /headers`** en `main_biblioteca.py` que:
 Probalo en Postman agregando en la pestaña **Headers**:
 
     x-api-key: mi-clave-secreta
+
+---
+
+## Ejercicio 10 — Autorización OAuth2
+
+Creá un nuevo archivo `ejercicios/routers/auth_users.py` con un sistema de autorización OAuth2 básico para usuarios de la biblioteca.
+
+### Estructura del archivo
+
+Creá el router en `routers/auth_users.py` e incluyelo en `main_biblioteca.py`.
+
+### Qué hacer
+
+**1. Modelos** — creá dos modelos Pydantic:
+
+- `BibliotecaUser` con campos: `username`, `full_name`, `email`, `disabled`
+- `BibliotecaUserDB` que herede de `BibliotecaUser` y agregue `password`
+
+**2. Base de datos simulada** — creá un diccionario `biblioteca_users_db` con al menos dos usuarios:
+- Uno activo (`disabled: False`)
+- Uno deshabilitado (`disabled: True`)
+
+**3. Funciones auxiliares** — creá:
+- `search_user_db(username)` → devuelve `BibliotecaUserDB` (con password, uso interno)
+- `search_user(username)` → devuelve `BibliotecaUser` (sin password, uso externo)
+
+**4. Dependencia de autorización** — creá `current_user(token: str = Depends(oauth2))` que:
+- Busque el usuario por token
+- Lance `401` si no existe
+- Lance `400` si está deshabilitado
+- Devuelva el usuario si todo está bien
+
+**5. Endpoints:**
+
+- `POST /auth/login` — recibe form data (`username` + `password`), verifica credenciales, devuelve `access_token`
+- `GET /auth/users/me` — protegido con `Depends(current_user)`, devuelve el usuario autenticado
+
+### Flujo de prueba en Postman
+
+    1. POST /auth/login
+       Body → form-data: username=tu_usuario / password=tu_password
+       → recibís {"access_token": "...", "token_type": "bearer"}
+
+    2. GET /auth/users/me
+       Headers: Authorization: Bearer <access_token>
+       → devuelve los datos del usuario (sin password)
+
+    3. GET /auth/users/me sin token
+       → debe devolver 401
+
+    4. POST /auth/login con el usuario deshabilitado
+       GET /auth/users/me con ese token
+       → debe devolver 400 "Usuario inactivo"
+
+    5. POST /auth/login con contraseña incorrecta
+       → debe devolver 400
+
+### A tener en cuenta
+
+- Usá `prefix="/auth"` en el router para que las rutas queden `/auth/login` y `/auth/users/me`
+- El `tokenUrl` de `OAuth2PasswordBearer` debe coincidir con la ruta completa: `"auth/login"`
+- El body del login va como **form-data** en Postman, no como JSON
+- En `/docs` aparece el botón **Authorize** — podés probarlo ahí también
