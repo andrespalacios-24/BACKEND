@@ -1,5 +1,7 @@
 # FastAPI — Autorización
 
+Fuentes: [FastAPI - Security](https://fastapi.tiangolo.com/tutorial/security/) · [FastAPI - Simple OAuth2](https://fastapi.tiangolo.com/tutorial/security/simple-oauth2/) · [FastAPI - OAuth2 JWT](https://fastapi.tiangolo.com/tutorial/security/oauth2-jwt/) · [OAuth2](https://oauth.net/2/) · [JWT](https://jwt.io/)
+
 ---
 
 ## 1. Qué es la autorización y por qué es necesaria
@@ -192,7 +194,7 @@ def search_user(username: str):
 
 ---
 
-#### `current_user` — la dependencia de autorización
+#### `current_user` — ejemplo de MoureDev
 
 ```python
 async def current_user(token: str = Depends(oauth2)):
@@ -209,37 +211,76 @@ async def current_user(token: str = Depends(oauth2)):
     return user
 ```
 
+#### `current_user` — estructura para rellenar
+
+```python
+# SIEMPRE IGUAL — solo cambian los mensajes de detail
+async def current_user(token: str = Depends(oauth2)):
+    user = search_user(token)                        # ← nombre de tu función auxiliar
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="...",                            # ← vos definís el mensaje
+            headers={"WWW-Authenticate": "Bearer"}) # ← siempre igual, estándar OAuth2
+    if user.disabled:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="...")                            # ← vos definís el mensaje
+    return user
+```
+
 **`token: str = Depends(oauth2)`** — FastAPI extrae automáticamente el token del header `Authorization: Bearer <token>` de la petición y lo pasa como argumento. No hay que leerlo manualmente.
 
 En este ejemplo el token es el `username` — por eso `search_user(token)` busca al usuario con ese nombre. En JWT real el token sería un string cifrado que hay que decodificar.
 
-**`headers={"WWW-Authenticate": "Bearer"}`** — header estándar que le dice al cliente qué tipo de autenticación necesita. Requerido por el estándar OAuth2.
+**`headers={"WWW-Authenticate": "Bearer"}`** — header estándar que le dice al cliente qué tipo de autenticación necesita. Siempre igual — requerido por el estándar OAuth2, nunca cambia.
 
-**`user.disabled`** — verifica que el usuario esté activo. Un usuario puede existir pero estar deshabilitado (como `mouredev2`).
+**`user.disabled`** — verifica que el usuario esté activo. Un usuario puede existir pero estar deshabilitado.
 
 ---
 
-#### `POST /login`
+#### `POST /login` — ejemplo de MoureDev
 
 ```python
 @app.post("/login")
 async def login(form: OAuth2PasswordRequestForm = Depends()):
     user_db = users_db.get(form.username)
     if not user_db:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                            detail="El usuario no es correcto")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="El usuario no es correcto")
     user = search_user_db(form.username)
     if not form.password == user.password:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                            detail="La contraseña no es correcta")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="La contraseña no es correcta")
     return {"access_token": user.username, "token_type": "bearer"}
 ```
 
-**`OAuth2PasswordRequestForm = Depends()`** — FastAPI lee automáticamente `username` y `password` del body como form data. El estándar OAuth2 exige que vayan como form data, no como JSON.
+#### `POST /login` — estructura para rellenar
 
-**`users_db.get(form.username)`** — busca el diccionario del usuario. Si no existe devuelve `None`.
+```python
+# SIEMPRE IGUAL — cambia: nombre del decorador (router/app), nombre del dict, mensajes de detail
+@router.post("/login")                                        # ← router o app según el archivo
+async def login(form: OAuth2PasswordRequestForm = Depends()): # ← siempre igual
+    user_db = biblioteca_users_db.get(form.username)          # ← nombre de tu dict
+    if not user_db:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,          # ← siempre 400
+            detail="...")                                      # ← vos definís el mensaje
+    user = search_user_db(form.username)                      # ← nombre de tu función
+    if not form.password == user.password:                    # ← siempre igual
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,          # ← siempre 400
+            detail="...")                                      # ← vos definís el mensaje
+    return {"access_token": user.username, "token_type": "bearer"} # ← siempre igual
+```
 
-**`return {"access_token": user.username, "token_type": "bearer"}`** — la respuesta del token siempre debe tener esta estructura exacta según el estándar OAuth2. En este ejemplo el token es el username — inseguro pero didáctico.
+**`OAuth2PasswordRequestForm = Depends()`** — FastAPI lee automáticamente `username` y `password` del body como form data. El estándar OAuth2 exige que vayan como form data, no como JSON — por eso en Postman el body va como `form-data` y no `raw JSON`.
+
+**`biblioteca_users_db.get(form.username)`** — busca el diccionario del usuario. Si no existe devuelve `None`.
+
+**`return {"access_token": user.username, "token_type": "bearer"}`** — estructura fija exigida por el estándar OAuth2. Siempre debe tener exactamente estas dos claves. En JWT el `access_token` será el token cifrado, no el username.
 
 ---
 
