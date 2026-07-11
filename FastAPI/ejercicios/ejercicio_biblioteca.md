@@ -284,3 +284,91 @@ Creá el router en `routers/auth_users.py` e incluyelo en `main_biblioteca.py`.
 - El `tokenUrl` de `OAuth2PasswordBearer` debe coincidir con la ruta completa: `"auth/login"`
 - El body del login va como **form-data** en Postman, no como JSON
 - En `/docs` aparece el botón **Authorize** — podés probarlo ahí también
+
+---
+
+## Ejercicio 11 — Autorización con JWT
+
+Creá un nuevo archivo `ejercicios/routers/jwt_auth_users.py` con el sistema de autorización OAuth2 + JWT para usuarios de la biblioteca. Este ejercicio reemplaza el token en texto plano del ejercicio 10 por un token cifrado con fecha de expiración.
+
+### Instalación previa
+
+```bash
+pip install pyjwt
+pip install "pwdlib[argon2]"
+```
+
+### Estructura del archivo
+
+Creá el router en `routers/jwt_auth_users.py` e incluyelo en `main_biblioteca.py`.
+
+### Qué hacer
+
+**1. Constantes de configuración** — definí al inicio del archivo:
+
+- `ALGORITHM = "HS256"`
+- `ACCESS_TOKEN_DURATION` — minutos de validez del token (podés usar 1 para probar la expiración)
+- `SECRET` — generá una clave con `secrets.token_hex(32)` desde la terminal Python
+
+**2. Modelos** — igual que en el ejercicio 10 pero con nombres distintos para no colisionar:
+- `JWTBibliotecaUser` con campos: `username`, `full_name`, `email`, `disabled`
+- `JWTBibliotecaUserDB` que herede de `JWTBibliotecaUser` y agregue `password`
+
+**3. Base de datos simulada** — creá `jwt_biblioteca_users_db` con al menos dos usuarios. Las contraseñas deben estar hasheadas con `pwdlib`. Para generarlas:
+
+```python
+from pwdlib import PasswordHash
+password_hash = PasswordHash.recommended()
+print(password_hash.hash("tu_contraseña"))
+```
+
+**4. Funciones auxiliares** — igual que antes:
+- `search_user_db(username)` → devuelve `JWTBibliotecaUserDB`
+- `search_user(username)` → devuelve `JWTBibliotecaUser`
+
+**5. Dependencias de autorización** — en JWT son dos funciones encadenadas:
+- `auth_user(token)` → decodifica el JWT, extrae el `sub`, busca el usuario
+- `current_user(user)` → verifica que el usuario no esté deshabilitado
+
+**6. Endpoints:**
+- `POST /jwt/login` — verifica credenciales con `password_hash.verify`, genera el token JWT con `sub` y `exp`, lo devuelve
+- `GET /jwt/users/me` — protegido con `Depends(current_user)`, devuelve el usuario autenticado
+
+### Cómo generar el SECRET
+
+```python
+import secrets
+print(secrets.token_hex(32))
+```
+
+Copiá el resultado y pegalo como valor de `SECRET` en el archivo.
+
+### Flujo de prueba en Postman
+
+    1. POST /jwt/login
+       Body → form-data: username=tu_usuario / password=tu_password
+       → recibís {"access_token": "eyJhbGci...", "token_type": "bearer"}
+       (el token ahora es un string cifrado largo, no el username)
+
+    2. GET /jwt/users/me
+       Headers: Authorization: Bearer eyJhbGci...
+       → devuelve los datos del usuario sin password
+
+    3. GET /jwt/users/me sin token
+       → debe devolver 401
+
+    4. POST /jwt/login con usuario deshabilitado → GET /jwt/users/me
+       → debe devolver 400 "Usuario inactivo"
+
+    5. Esperá que expire el token (según ACCESS_TOKEN_DURATION)
+       GET /jwt/users/me con el token expirado
+       → debe devolver 401
+
+    6. Pegá el token en https://jwt.io y observá el payload decodificado
+
+### A tener en cuenta
+
+- Usá `prefix="/jwt"` en el router
+- El `tokenUrl` de `OAuth2PasswordBearer` debe ser `"jwt/login"`
+- El body del login va como **form-data** en Postman, no como JSON
+- La diferencia clave con el ejercicio 10: el token es cifrado, las contraseñas están hasheadas y el token expira
