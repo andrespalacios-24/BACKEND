@@ -400,14 +400,19 @@ pip install "pwdlib[argon2]"         # para hashear contraseñas con Argon2
 
 ---
 
-### Imports actualizados (versión oficial)
+### Imports actualizados (versión oficial — la que usás)
 
 ```python
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from datetime import datetime, timedelta, timezone
-import jwt                                          # PyJWT — antes era from jose import jwt
-from jwt.exceptions import InvalidTokenError        # antes era from jose import JWTError
-from pwdlib import PasswordHash                     # antes era from passlib.context import CryptContext
+import jwt                          # PyJWT
+from jwt.exceptions import InvalidTokenError
+from pwdlib import PasswordHash
 ```
+
+> **Referencia MoureDev (no usar):** `from jose import jwt, JWTError` y `from passlib.context import CryptContext` — librerías anteriores que aparecen en el curso pero que la documentación oficial ya no recomienda.
 
 ---
 
@@ -430,28 +435,28 @@ Con `PasswordHash.recommended()` siempre usás el algoritmo más seguro disponib
 
 ---
 
-### El código de MoureDev
+### Código de referencia (versión oficial con PyJWT y pwdlib)
 
 ```python
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from jose import jwt, JWTError
-from passlib.context import CryptContext
 from datetime import datetime, timedelta, timezone
+import jwt
+from jwt.exceptions import InvalidTokenError
+from pwdlib import PasswordHash
 
 ALGORITHM = "HS256"
 ACCESS_TOKEN_DURATION = 1
-SECRET = "201d573bd7d1344d3a3bfce1550b69102fd11be3db6d379508b6cccc58ea230b"
+SECRET = "tu_secret_generado_con_secrets_token_hex_32"
 
 router = APIRouter(
-    prefix="/jwtauth",
-    tags=["jwtauth"],
-    responses={status.HTTP_404_NOT_FOUND: {"message": "No encontrado"}}
+    prefix="/jwt",
+    tags=["jwt"]
 )
 
-oauth2 = OAuth2PasswordBearer(tokenUrl="login")
-crypt = CryptContext(schemes=["bcrypt"])
+oauth2 = OAuth2PasswordBearer(tokenUrl="jwt/login")
+password_hash = PasswordHash.recommended()
 
 class User(BaseModel):
     username: str
@@ -460,15 +465,15 @@ class User(BaseModel):
     disabled: bool
 
 class UserDB(User):
-    password: str
+    password: str  # hash Argon2 generado con password_hash.hash("contraseña")
 
 users_db = {
-    "mouredev": {
-        "username": "mouredev",
-        "full_name": "Brais Moure",
-        "email": "braismoure@mouredev.com",
+    "usuario": {
+        "username": "usuario",
+        "full_name": "Nombre Completo",
+        "email": "email@ejemplo.com",
         "disabled": False,
-        "password": "$2a$12$B2Gq.Dps1WYf2t57eiIKjO4DXC3IUMUXISJF62bSRiFfqMdOI2Xa6"
+        "password": "$argon2id$v=19$..."  # hash generado con password_hash.hash()
     }
 }
 
@@ -489,7 +494,7 @@ async def auth_user(token: str = Depends(oauth2)):
         username = jwt.decode(token, SECRET, algorithms=[ALGORITHM]).get("sub")
         if username is None:
             raise exception
-    except JWTError:
+    except InvalidTokenError:       # PyJWT usa InvalidTokenError, no JWTError
         raise exception
     return search_user(username)
 
@@ -508,7 +513,7 @@ async def login(form: OAuth2PasswordRequestForm = Depends()):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="El usuario no es correcto")
     user = search_user_db(form.username)
-    if not crypt.verify(form.password, user.password):
+    if not password_hash.verify(form.password, user.password):  # pwdlib
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="La contraseña no es correcta")
@@ -530,8 +535,8 @@ async def me(user: User = Depends(current_user)):
 | Aspecto | Basic Auth | JWT |
 |---------|-----------|-----|
 | Token | Username en texto plano | String cifrado y firmado |
-| Contraseña en BD | Texto plano `"123456"` | Hash bcrypt `"$2a$12$..."` |
-| Verificación contraseña | `form.password == user.password` | `crypt.verify(form.password, user.password)` |
+| Contraseña en BD | Texto plano `"123456"` | Hash Argon2 `"$argon2id$..."` |
+| Verificación contraseña | `form.password == user.password` | `password_hash.verify(form.password, user.password)` |
 | Expiración | No tiene | Sí — `exp` en el payload |
 | Dependencia auth | `current_user` directa | `auth_user` → `current_user` en cadena |
 

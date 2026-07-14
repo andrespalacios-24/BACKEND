@@ -1,13 +1,14 @@
 from fastapi import FastAPI, Cookie, HTTPException, Header
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
-from ejercicios.routers import books, auth_users
+from ejercicios.routers import books, auth_users, jwt_auth_users
 from typing import Optional
 
 
 app = FastAPI()
 app.include_router(books.router)
-app.include_router(auth_users.router)
+app.include_router(jwt_auth_users.router)
+#app.include_router(auth_users.router)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.get("/")
@@ -52,5 +53,6 @@ async def headers(
     response.headers["X-Biblioteca-Version"] = "1.0"   
     return response
 
-# para iniciar el servidor: uvicorn ejercicios.main_biblioteca:app --reload
+# para iniciar el servidor:             
 # para activar el venv. source ~/BACKEND/FastAPI/.venv/bin/activate
+# crear la clave para el secret: python -c "import secrets; print(secrets.token_hex(32))"
