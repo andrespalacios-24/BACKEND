@@ -372,3 +372,99 @@ Copiá el resultado y pegalo como valor de `SECRET` en el archivo.
 - El `tokenUrl` de `OAuth2PasswordBearer` debe ser `"jwt/login"`
 - El body del login va como **form-data** en Postman, no como JSON
 - La diferencia clave con el ejercicio 10: el token es cifrado, las contraseñas están hasheadas y el token expira
+
+---
+
+## Ejercicio 12 — MongoDB
+
+Implementá un CRUD completo de libros conectado a MongoDB, reemplazando la lista en memoria que usaste en los ejercicios anteriores.
+
+### Antes de empezar
+
+Asegurate de tener MongoDB corriendo en WSL:
+
+    sudo mongod --dbpath /data/db
+
+### Estructura de archivos
+
+```
+ejercicios/
+└── db/
+    ├── __init__.py
+    ├── client.py
+    ├── models/
+    │   ├── __init__.py
+    │   └── book.py
+    └── schemas/
+        ├── __init__.py
+        └── book.py
+routers/
+    └── books_db.py
+```
+
+### Qué hacer
+
+**1. `db/client.py`** — creá la conexión a MongoDB:
+- Importá `MongoClient` de `pymongo`
+- Creá `db_client` conectado a la base de datos local
+- La colección que vas a usar se llama `books`
+
+**2. `db/models/book.py`** — creá el modelo Pydantic `Book` con:
+- `id: Optional[str] = None` — opcional porque MongoDB lo genera
+- `title: str`
+- `author: str`
+- `year: int`
+- `available: bool`
+
+**3. `db/schemas/book.py`** — creá dos funciones:
+- `book_schema(book)` → convierte un documento MongoDB a dict con `id` como string
+- `books_schema(books)` → aplica `book_schema` a una lista de documentos
+
+**4. `routers/books_db.py`** — implementá el CRUD completo:
+- `GET /bookdb/` → devuelve todos los libros de MongoDB
+- `GET /bookdb/{id}` → busca un libro por su `_id`
+- `POST /bookdb/` → crea un libro nuevo, verifica que el título no exista ya
+- `PUT /bookdb/` → actualiza un libro completo por su `id`
+- `DELETE /bookdb/{id}` → elimina un libro por su `id`
+- `search_book(field, key)` → función auxiliar de búsqueda genérica
+
+**5. Incluí el router en `main_biblioteca.py`**
+
+### Flujo de prueba en Postman
+
+    1. GET  /bookdb/
+       → lista vacía [] (la colección está vacía)
+
+    2. POST /bookdb/
+       Body → raw JSON:
+       {"title": "Cien años de soledad", "author": "García Márquez", "year": 1967, "available": true}
+       → devuelve el libro con el _id generado por MongoDB
+
+    3. GET  /bookdb/
+       → aparece el libro creado con su id
+
+    4. Copiá el id del libro
+
+    5. GET  /bookdb/{id}
+       → devuelve ese libro específico
+
+    6. PUT  /bookdb/
+       Body → raw JSON con el id copiado y datos modificados:
+       {"id": "el_id_copiado", "title": "Título modificado", "author": "García Márquez", "year": 1967, "available": false}
+       → devuelve el libro actualizado
+
+    7. DELETE /bookdb/{id}
+       → elimina el libro, código 204
+
+    8. GET  /bookdb/{id}
+       → debe devolver error "No encontrado"
+
+    9. Abrí MongoDB Compass → conectate a mongodb://localhost
+       → verificá que los datos aparecen en la colección books
+
+### A tener en cuenta
+
+- El `id` en el POST no se envía — MongoDB lo genera automáticamente
+- Antes de insertar hay que eliminar el campo `id` del dict porque MongoDB maneja su propio `_id`
+- Para buscar por `_id` en MongoDB hay que convertir el string a `ObjectId`: `from bson import ObjectId`
+- La diferencia principal con los ejercicios anteriores: los datos persisten aunque reinicies uvicorn

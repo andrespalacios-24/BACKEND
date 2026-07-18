@@ -1,80 +1,93 @@
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
-from typing import Optional
+from fastapi import APIRouter, HTTPException, status
+from bson import ObjectId
+from ejercicios.db.client import db_client
+from ejercicios.db.models.book import Book
+from ejercicios.db.schemas.book import book_schema, books_schema
 
 router = APIRouter(
-tags=["Books"],
-responses={404: {"description": "No encontrado"}}
+    prefix="/booksdb",
+    tags=["booksdb"],
+    responses={status.HTTP_404_NOT_FOUND: {"message": "No encontrado"}}
 )
-# en este caso en router=Apirouter se deja son prefix ya que existen:
-#book y books y si dejo prefix book para hacer cualquier peticion para books seria
-# s/ y no seria muy legible ni logico
-class Book (BaseModel):
-    id: int
-    title: str
-    author: str
-    year: int
-    available: bool
 
-books_list= [
-Book(id= 1, title= "Cien años de soledad", author= "Gabriel García Márquez", year= 1967, available= True),
-Book(id= 2, title= "1984", author= "George Orwell", year= 1949, available= False),
-Book(id= 3, title= "El señor de los anillos", author= "J.R.R. Tolkien", year= 1954, available= True),
-Book(id= 4, title= "Don Quijote de la Mancha", author= "Miguel de Cervantes", year= 1605, available= True)
-]
+# este endpoint se usa para leer en este caso todos los libros
+@router.get("/", response_model=list[Book])
+async def get_books():
+    return books_schema(db_client.books.find())
 
-def search_book(id: int):
-    books= filter(lambda book: book.id == id, books_list)
+def search_book(field: str, key):
     try:
-        return list(books)[0]
+        book_document = db_client.books.find_one({field: key})
+        if not book_document:
+            return None
+        return Book(**book_schema(book_document))
     except:
-        raise HTTPException(status_code=404, detail="Libro no encontrado")
+        return None
 
-    
-   
-@router.get("/books", response_model=list[Book])
-async def books():
-    return books_list
-
-
-
-@router.get("/book/{id}")
-async def book(id: int):
-    return search_book(id)
-
-
-@router.get("/book/")
-async def book_query(id: int):
-    return search_book(id)
-
-
-@router.get("/books/")
-async def books_by_available(available: Optional[bool] = None):
-    if available is None:
-        return books_list
-    return [b for b in books_list if b.available == available]
-
-
-
-@router.post("/book/", response_model=Book, status_code=201)
+@router.post("/", response_model=Book, status_code=status.HTTP_201_CREATED)
 async def create_book(book: Book):
-    if any(b.id == book.id for b in books_list):
-         raise HTTPException(status_code=400, detail="El libro ya existe")
-    books_list.append(book)
+    if search_book("title", book.title) is not None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, 
+            detail="El libro ya existe en la biblioteca"
+        )
+
+    book_dict = dict(book)
+    del book_dict["id"]
+
+    inserted_id = db_client.books.insert_one(book_dict).inserted_id
+    new_book = book_schema(db_client.books.find_one({"_id": inserted_id}))
+    
+    return Book(**new_book)
+
+@router.get("/{id}", response_model=Book)
+async def get_book_by_id(id: str):
+    book = search_book("_id", ObjectId(id))
+    
+    if not book:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, 
+            detail="El libro no existe"
+        )
+        
     return book
 
-@router.put("/book/")
-async def modificate_book(book: Book):
-    for index, modify_book in enumerate(books_list):
-        if modify_book.id == book.id:
-            books_list[index] = book
-            return book
-    raise HTTPException(status_code=404, detail="No se ha actualizado el libro")
 
-@router.delete("/book/{id}", status_code=204)
-async def delete_book(id: int):
-    for index, delete_book in enumerate(books_list):
-        if delete_book.id == id:
-            del books_list[index]
-            return 
-    raise HTTPException(status_code=404, detail="Libro no encontrado")
+@router.put("/{id}", response_model=Book)
+async def update_book(id: str, book: Book):
+    book_dict = dict(book)
+    del book_dict["id"]
+    
+    try:
+        
+        from pymongo import ReturnDocument
+        updated_document = db_client.books.find_one_and_replace(
+            {"_id": ObjectId(id)}, 
+            book_dict, 
+            return_document=ReturnDocument.AFTER
+        )
+        
+        
+        if not updated_document:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, 
+                detail="No se encontró el libro para actualizar"
+            )
+            
+        return Book(**book_schema(updated_document))
+        
+    except:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, 
+            detail="No se pudo actualizar el libro. Verifica el ID enviado"
+        )
+    
+@router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_book(id: str):
+    deleted_document = db_client.books.find_one_and_delete({"_id": ObjectId(id)})
+    
+    if not deleted_document:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, 
+            detail="No se encontró el libro que deseas eliminar"
+        )

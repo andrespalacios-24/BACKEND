@@ -53,6 +53,7 @@ async def headers(
     response.headers["X-Biblioteca-Version"] = "1.0"   
     return response
 
-# para iniciar el servidor:             
+# para iniciar el servidor: uvicorn ejercicios.main_biblioteca:app --reload            
 # para activar el venv. source ~/BACKEND/FastAPI/.venv/bin/activate
 # crear la clave para el secret: python -c "import secrets; print(secrets.token_hex(32))"
+# inicializar mongodb en WSL: sudo mongod --dbpath /data/db
