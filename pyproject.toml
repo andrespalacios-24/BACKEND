@@ -1,2 +1,7 @@
+[project]
+name = "backend-biblioteca"
+version = "0.1.0"
+dependencies = []
+
 [tool.vercel]
 entrypoint = "FastAPI.main_biblioteca:app"
