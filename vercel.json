@@ -1,7 +1,7 @@
 {
   "builds": [
     {
-      "src": "FASTAPI/main_biblioteca.py",
+      "src": "main_biblioteca.py",
       "use": "@vercel/python"
     }
   ]
