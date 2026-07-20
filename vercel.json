@@ -4,11 +4,5 @@
       "src": "FASTAPI/main_biblioteca.py",
       "use": "@vercel/python"
     }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "FASTAPI/main_biblioteca.py"
-    }
   ]
 }
