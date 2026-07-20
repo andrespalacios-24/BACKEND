@@ -1,1 +1,1 @@
-{"builds": [{"src": "FastAPI/main_biblioteca.py", "use": "@vercel/python"}], "routes": [{"src": "/(.*)", "dest": "FastAPI/main_biblioteca.py"}], "version": 2}
+{"builds": [{"src": "api.py", "use": "@vercel/python"}], "routes": [{"src": "/(.*)", "dest": "api.py"}], "version": 2}
