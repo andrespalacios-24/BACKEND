@@ -463,3 +463,79 @@ db_client.users.delete_many({})   # elimina todos
 ```
 
 Referencia: [PyMongo - Tutorial](https://pymongo.readthedocs.io/en/stable/tutorial.html) · [MongoDB - CRUD](https://www.mongodb.com/docs/manual/crud/) · [FastAPI - NoSQL](https://fastapi.tiangolo.com/how-to/nosql-databases-couchbase/)
+
+---
+
+## 10. MongoDB Atlas — Base de datos en la nube
+
+### Qué es
+
+MongoDB Atlas es el servicio en la nube de MongoDB. En lugar de correr MongoDB en tu máquina local, los datos se guardan en servidores de MongoDB en internet. Tiene un tier gratuito (M0) suficiente para proyectos de aprendizaje y proyectos pequeños.
+
+### Para qué sirve
+
+- La base de datos está disponible desde cualquier lugar — no depende de que tu máquina esté encendida
+- No necesitás correr `sudo mongod` cada vez
+- Cuando desplegués la API en producción, la base de datos ya está accesible desde internet
+- Múltiples personas pueden conectarse a la misma base de datos
+
+### Cómo conectarse — el único cambio
+
+El único cambio respecto a MongoDB local es la connection string en `client.py`:
+
+```python
+from pymongo import MongoClient
+
+# Base de datos local (desarrollo)
+# db_client = MongoClient().local
+
+# Base de datos remota MongoDB Atlas (producción o desarrollo en la nube)
+db_client = MongoClient(
+    "mongodb+srv://<user>:<password>@<url>/?retryWrites=true&w=majority").test
+#              ^^^^^^   ^^^^^^^^   ^^^^^                                   ^^^^
+#              usuario  contraseña  URL del cluster                        nombre de la BD
+```
+
+**`.test`** al final selecciona la base de datos — reemplazalo con el nombre que quieras usar.
+
+Todo lo demás — modelos, schemas, endpoints — queda exactamente igual. El cambio es solo en `client.py`.
+
+### Cómo obtener la connection string
+
+1. Creá una cuenta en [https://mongodb.com](https://mongodb.com)
+2. Creá un cluster gratuito (M0)
+3. En **Database Access** → creá un usuario con contraseña
+4. En **Network Access** → agregá tu IP o `0.0.0.0/0` para permitir cualquier IP
+5. En el cluster → **Connect** → **Connect your application** → copiás la connection string
+
+La connection string tiene este formato:
+```
+mongodb+srv://usuario:contraseña@cluster0.xxxxx.mongodb.net/?retryWrites=true&w=majority
+```
+
+### Sintaxis para rellenar
+
+```python
+from pymongo import MongoClient
+
+# ── SIEMPRE IGUAL ──────────────────────────────────────────
+db_client = MongoClient(
+    "mongodb+srv://<user>:<password>@<url>/?retryWrites=true&w=majority"
+#              ^^^^^^   ^^^^^^^^   ^^^^^
+#              ← vos completás estos tres valores con los de tu cluster
+).nombre_de_tu_bd   # ← nombre de la base de datos que querés usar
+# ───────────────────────────────────────────────────────────
+```
+
+### Local vs Atlas
+
+| Aspecto | Local | Atlas |
+|---------|-------|-------|
+| Dónde corre | Tu máquina | Servidores de MongoDB |
+| Connection string | `MongoClient().local` | `MongoClient("mongodb+srv://...")` |
+| Requiere iniciar | `sudo mongod` cada vez | No — siempre disponible |
+| Acceso desde internet | No | Sí |
+| Costo | Gratis | Gratis (tier M0) |
+| Uso recomendado | Desarrollo local | Producción o compartir BD |
+
+Referencia: [MongoDB Atlas](https://www.mongodb.com/atlas) · [Atlas Connection String](https://www.mongodb.com/docs/atlas/driver-connection/)
