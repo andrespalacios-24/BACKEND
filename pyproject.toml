@@ -1,2 +1,2 @@
 [tool.vercel]
-entrypoint = "FastAPI/main_biblioteca.py:app"
+entrypoint = "FastAPI.main_biblioteca:app"
