@@ -1,8 +1,8 @@
 {
-  "rewrites": [
+  "builds": [
     {
-      "source": "/(.*)",
-      "destination": "/api/index"
+      "src": "main_biblioteca.py",
+      "use": "@vercel/python"
     }
   ]
 }
