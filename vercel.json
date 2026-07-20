@@ -1,5 +1,4 @@
 {
-  "version": 2,
   "builds": [
     {
       "src": "FASTAPI/main_biblioteca.py",
